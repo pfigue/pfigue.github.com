@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: pdf | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/pdf/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Analysing PDFs: a little of OpenAction]]></title>
+    <link href="http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/"/>
+    <updated>2013-02-02T13:21:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction</id>
+    <content type="html"><![CDATA[<p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
+
+<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header: %PDF-1.4
+obj                   28
+endobj                28
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  2
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            1
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>It seems to be complicated, though it is just 2 pages long.</p>
+
+<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
+
+<pre><code>obj 27 0
+Type: /Catalog
+Referencing: 9 0 R, 1 0 R
+  &lt;&lt;
+    /Type /Catalog
+    /Pages 9 0 R
+    /OpenAction [1 0 R /XYZ null null 0]
+    /Lang (de-DE)
+  &gt;&gt;
+</code></pre>
+
+<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
+
+<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
+
+<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Analyzing PDFs]]></title>
+    <link href="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/"/>
+    <updated>2013-02-02T11:41:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs</id>
+    <content type="html"><![CDATA[<p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
+
+<h2>Bank Transfer Order</h2>
+
+<p>An overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf-file
+PDF Header: %PDF-1.4
+obj                   16
+endobj                16
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  1
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>The first thing I saw is the header:</p>
+
+<pre><code>PDF Comment '%PDF-1.4\n'
+PDF Comment '%\xe2\xe3\xcf\xd3\n'
+</code></pre>
+
+<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
+
+<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
+
+<pre><code>obj 16 0
+ Type: 
+ Referencing: 
+  &lt;&lt;
+    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
+    /ModDate (D:201301dddddddd+dd'00')
+    /CreationDate (D:201301dddddddd+dd'00')
+  &gt;&gt;
+ xref
+ PDF Comment '%iText-5.3.2\n'
+</code></pre>
+
+<p>Obviously I replaced part of the dates.</p>
+
+<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
+
+<p>At the end of the file I find also:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Root 150R
+    /ID [&lt;32*x&gt;&lt;32*x&gt;]
+    /Info 160R
+    /Size 17
+   &gt;&gt;
+</code></pre>
+
+<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
+
+<p>There were no Javascript sections. No compression, no encryption.</p>
+
+<h2><em>Print to PDF</em> from Firefox</h2>
+
+<p>Overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf
+PDF Header: %PDF-1.5
+obj                   40
+endobj                40
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  4
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>Rendered with Cairo:</p>
+
+<pre><code>obj 39 0
+ Type: 
+ Referencing: 
+   &lt;&lt;
+     /Creator (cairo 1.9.5 (http:
+     / /cairographics.org))
+     /Producer (cairo 1.9.5 (http:
+     / /cairographics.org))
+   &gt;&gt;
+</code></pre>
+
+<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
+
+<p>Uses a more modern PDF version:</p>
+
+<pre><code>PDF Comment '%PDF-1.5\n'
+PDF Comment '%\xb5\xed\xae\xfb\n'
+</code></pre>
+
+<p>The trailer lacks IDs:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Size 41
+    /Root 400R
+    /Info 390R
+  &gt;&gt;
+</code></pre>
+
+<p>Again, no Javascript, no compression, no encryption.</p>
+
+<h2>Scans done with the fotocopy machine</h2>
+
+<p>The own signature of the machine:</p>
+
+<pre><code>obj 188 0
+  Type: 
+  Referencing: 
+  &lt;&lt;
+    /Creator (bizhub C35)
+    /Producer (bizhub C35)
+    /CreationDate (D:20120411180757+01'00')
+  &gt;&gt;
+</code></pre>
+
+<h2>Links</h2>
+
+<ul>
+<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
+<li><a href="http://itextpdf.com/">the iText library</a></li>
+<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

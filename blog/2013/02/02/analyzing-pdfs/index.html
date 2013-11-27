@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Analyzing PDFs - pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="I found several PDFs in my hard disk. With the pdf-parser and pdfid of Didier Stevens I am taking a look into the internals of these files. Bank &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Analyzing PDFs</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
+
+<h2>Bank Transfer Order</h2>
+
+<p>An overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf-file
+PDF Header: %PDF-1.4
+obj                   16
+endobj                16
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  1
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>The first thing I saw is the header:</p>
+
+<pre><code>PDF Comment '%PDF-1.4\n'
+PDF Comment '%\xe2\xe3\xcf\xd3\n'
+</code></pre>
+
+<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
+
+<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
+
+<pre><code>obj 16 0
+ Type: 
+ Referencing: 
+  &lt;&lt;
+    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
+    /ModDate (D:201301dddddddd+dd'00')
+    /CreationDate (D:201301dddddddd+dd'00')
+  &gt;&gt;
+ xref
+ PDF Comment '%iText-5.3.2\n'
+</code></pre>
+
+<p>Obviously I replaced part of the dates.</p>
+
+<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
+
+<p>At the end of the file I find also:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Root 150R
+    /ID [&lt;32*x&gt;&lt;32*x&gt;]
+    /Info 160R
+    /Size 17
+   &gt;&gt;
+</code></pre>
+
+<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
+
+<p>There were no Javascript sections. No compression, no encryption.</p>
+
+<h2><em>Print to PDF</em> from Firefox</h2>
+
+<p>Overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf
+PDF Header: %PDF-1.5
+obj                   40
+endobj                40
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  4
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>Rendered with Cairo:</p>
+
+<pre><code>obj 39 0
+ Type: 
+ Referencing: 
+   &lt;&lt;
+     /Creator (cairo 1.9.5 (http:
+     / /cairographics.org))
+     /Producer (cairo 1.9.5 (http:
+     / /cairographics.org))
+   &gt;&gt;
+</code></pre>
+
+<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
+
+<p>Uses a more modern PDF version:</p>
+
+<pre><code>PDF Comment '%PDF-1.5\n'
+PDF Comment '%\xb5\xed\xae\xfb\n'
+</code></pre>
+
+<p>The trailer lacks IDs:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Size 41
+    /Root 400R
+    /Info 390R
+  &gt;&gt;
+</code></pre>
+
+<p>Again, no Javascript, no compression, no encryption.</p>
+
+<h2>Scans done with the fotocopy machine</h2>
+
+<p>The own signature of the machine:</p>
+
+<pre><code>obj 188 0
+  Type: 
+  Referencing: 
+  &lt;&lt;
+    /Creator (bizhub C35)
+    /Producer (bizhub C35)
+    /CreationDate (D:20120411180757+01'00')
+  &gt;&gt;
+</code></pre>
+
+<h2>Links</h2>
+
+<ul>
+<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
+<li><a href="http://itextpdf.com/">the iText library</a></li>
+<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/pdf/'>pdf</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/12/29/new-git-subcommands/" title="Previous Post: new git subcommands">&laquo; new git subcommands</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/" title="Next Post: Analysing PDFs: a little of OpenAction">Analysing PDFs: a little of OpenAction &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don't</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/';
+        var disqus_url = 'http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

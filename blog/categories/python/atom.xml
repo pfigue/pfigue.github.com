@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: python | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Read-the-Docs: served standalone with uwsgi]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-uwsgi/"/>
+    <updated>2013-03-23T21:08:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-uwsgi</id>
+    <content type="html"><![CDATA[<p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for <em>uwsgi</em> instead of <em>gunicorn</em>, install it in the virtualenv:</p>
+
+<pre><code># pip install uwsgi
+</code></pre>
+
+<p>Now you should be ready to launch uwsgi for development:</p>
+
+<pre><code># DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite' /opt/readthedocs.org/.venv/bin/uwsgi --home /opt/readthedocs.org/.venv/ --module readthedocs.wsgi --socket 127.0.0.1:8001 --pidfile /var/run/uwsgi-rtfm.localhost.pid --processes 1 --master --max-requests 50 --pythonpath /opt/readthedocs.org/ --reload-on-rss 256 --reload-on-as 256 --limit-as 384 --harakiri 360
+</code></pre>
+
+<p>You shouldn&rsquo;t be able to make an HTTP request as it is using the WSGI protocol.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to the <em>uwsgi</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        uwsgi_pass 127.0.0.1:8001;
+        include uwsgi_params;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that <em>uwsgi</em> is listening in the the port 8001, where <em>nginx</em> is forwarding the requests using the <em>WSGI</em> protocol.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/uwsgi/">Django: How to use Django with uWSGI</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Read-the-Docs: served standalone with gunicorn]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-gunicorn/"/>
+    <updated>2013-03-23T20:27:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-gunicorn</id>
+    <content type="html"><![CDATA[<p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for gunicorn instead of uwsgi, install it in the virtualenv:</p>
+
+<pre><code># pip install gunicorn
+</code></pre>
+
+<p>Now you should be ready to launch gunicorn for development:</p>
+
+<pre><code># export PYTHONPATH='/opt/readthedocs.org/:/opt/readthedocs.org/readthedocs/'
+# export DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite'  # to work with sqlite
+# gunicorn readthedocs.wsgi:application --debug
+</code></pre>
+
+<p>And check if you can connect from the browser to <a href="http://127.0.0.1:8000/">your instance</a>.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to <em>gunicorn</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that this is HTTP proxy passing instead of WSGI passing.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/gunicorn/">Django: How to use Django with Gunicorn</a></li>
+<li><a href="http://docs.gunicorn.org/en/latest/deploy.html">Deploying Gunicorn</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Installing Read-the-Docs for development]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/installing-read-the-docs-for-development/"/>
+    <updated>2013-03-23T19:06:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/installing-read-the-docs-for-development</id>
+    <content type="html"><![CDATA[<p>This recipe is intended to make <a href="https://readthedocs.org/">Read-the-Docs</a> run with the simplest infraestructure: sqlite as database and the own django webserver. This might not be the most appropiate for a production environment, but could suffice for your own test or for a small development group.</p>
+
+<p>Prepare the required system packages:</p>
+
+<pre><code># apt-get install python2.7 python-setuptools python-pip sqlite git python-virtualenv
+</code></pre>
+
+<p>Fetch the code via HTTPS to avoid ssh authentication:</p>
+
+<pre><code>$ sudo su
+# cd /opt
+# git clone https://github.com/rtfd/readthedocs.org.git
+</code></pre>
+
+<p>Create the Virtual Environment inside of the fetched code:</p>
+
+<pre><code># cd /opt/readthedocs.org/
+# virtualenv -p python2.7 .venv
+# source .venv/bin/activate
+# pip install -r pip_requirements.txt
+</code></pre>
+
+<p>Prepare the database. With the virtualenv activated:</p>
+
+<pre><code># cd /opt/readthedocs.org/readthedocs/
+# ./manage.py syncdb # here you may want to create an admin user.
+# ./manage.py migrate
+# ./manage.py loaddata test_data # this is just for development or testing
+</code></pre>
+
+<p>Run the development server like this:</p>
+
+<pre><code># ./manage.py runserver
+</code></pre>
+
+<p>And generate some documentation, for example the latest version for the project <em>pip</em>:</p>
+
+<pre><code># ./manage.py update_repos pip
+</code></pre>
+
+<p>To generate the documentation for pip version a.b.c:</p>
+
+<pre><code># ./manage.py update_repos pip -V a.b.c
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://read-the-docs.readthedocs.org/en/latest/install.html">http://read-the-docs.readthedocs.org/en/latest/install.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

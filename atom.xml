@@ -1,0 +1,1079 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[pfigue]]></title>
+  <link href="http://pfigue.github.io/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to add custom facts to Facter]]></title>
+    <link href="http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter/"/>
+    <updated>2013-11-27T18:55:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter</id>
+    <content type="html"><![CDATA[<h2>What is Facter?</h2>
+
+<p>It is a Ruby tool that informs you about facts.</p>
+
+<p>As far as I know, it is used often from Puppet, to know about properties of the environment you are going to provision.</p>
+
+<p>Those properties can be things like <em>Operating System</em>, <em>Version of the kernel</em>, <em>Architecture</em>, <em>Amazon EC2 Instance ID</em>, <em>Available memory</em>, <em>Number of processors</em>, etc.</p>
+
+<p>The <code>facter</code> tool by default has some values like those above: you can run <code>facter</code> in the shell to get a list of <em>facts</em>.</p>
+
+<p>From a Puppet Manifest you could write statements dependent on those facts.
+For example, to install some package when the manifest is applied to a Debian system, and install a different package when applied to a Red Hat one.</p>
+
+<h2>Do you need to define your own Facts?</h2>
+
+<p><strong>Facter</strong> looks for the <em>FACTERLIB</em> environment variable, which may point to a directory, if it is defined.</p>
+
+<p>If you put in that directory a file named <code>hardware_platform.rb</code> (note the <em>.rb</em> extension), and inside you define:</p>
+
+<pre><code># hardware_platform.rb
+
+Facter.add("hardware_platform") do
+    setcode do
+        Facter::Util::Resolution.exec('/bin/uname -i')
+    end
+end
+</code></pre>
+
+<p>There will appear a new <em>Fact</em> called <em>hardware_platform</em>:</p>
+
+<pre><code># facter | grep -i platform
+hardware_platform =&gt; x86_64
+#
+</code></pre>
+
+<p>You can invoke it also via <code>facter hardware_platform</code>:</p>
+
+<pre><code># facter hardware_platform
+x86_64
+#
+</code></pre>
+
+<p>Pay attention, that the file name and the Fact name are the same. An the file extension is <em>.rb</em>.</p>
+
+<p>In this way, you can have your own facts for your Puppet manifests.</p>
+
+<p>Puppet Docs has much <a href="http://docs.puppetlabs.com/guides/custom_facts.html">more information</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Versioning APIs: do or don't]]></title>
+    <link href="http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/"/>
+    <updated>2013-09-24T00:27:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont</id>
+    <content type="html"><![CDATA[<p>Today I visited <a href="https://secure.trifork.com/berlin-2013/freeevent/index.jsp?eventOID=5783">REST Beyond the Intro Level</a>, where <a href="http://www.innoq.com/blog/st/">Stefan Tilkov</a> explained several concepts regarding REST APIs.</p>
+
+<p>Among other things he mentioned NOT to version APIs, and he took as argument the <a href="http://en.wikipedia.org/wiki/Robustness_principle">Postel&rsquo;s Law</a>:</p>
+
+<pre><code>Be conservative in what you send, be liberal in what you accept
+</code></pre>
+
+<p>Keep your API always backwards compatible. Keep te same behaviour for your ressources, and if you can&rsquo;t keep it, create new ressources.</p>
+
+<p>His idea is that the part of the system serving the API should be <em>conservative</em>, and should avoid <em>semantic jumps</em> when developers deploy new features. At the same time, the consumers of the API should be tolerant when they use it.</p>
+
+<h2>Stefan, I disagree</h2>
+
+<p>If Stefan has a point when he says that an API is always the same and it has the same essential behaviour (e.g. behind the <a href="https://dev.twitter.com/docs/api">Twitter REST API</a> is the same idea, independently of the version: essentially, provide access to read and post tweets.), personally I don&rsquo;t agree with him too much.</p>
+
+<p>I think an API evolves a lot during its life and needs proper versioning. At least, the non-backwards compatible changes should be identified.</p>
+
+<p>In a mature API, well designed, well and long tested, maybe there are no big changes. But in a <strong>new API, built for a not-very-well defined product, change is the constant, and non-backwards-compatible changes happen</strong>.</p>
+
+<p>Also there could be plenty of different clients for an API, each of them programmed for a different version and expecting an specific behaviour. They will break if we don&rsquo;t serve different versions of the API.</p>
+
+<ul>
+<li>One alternative is put the version number in the URL, like <a href="http://api.v1.foo.bar/,">http://api.v1.foo.bar/,</a> or <a href="http://api.foo.bar/v1/">http://api.foo.bar/v1/</a></li>
+<li>Another alternative (I like it more) it passing an argument with the version, like <a href="http://api.foo.bar/?v=1,">http://api.foo.bar/?v=1,</a> and default to the last stable version if no version number is provided.</li>
+</ul>
+
+
+<p>My work experience is <em>startup</em>, and there you don&rsquo;t know always which product are you developing. Decissions change often quite fast and you can&rsquo;t design for the long-term. Maybe if I had work in a more stable environment I had a different opinion and could easily agree with Stefan.</p>
+
+<h2>Semantic Versioning</h2>
+
+<p><a href="http://semver.org/">Semantic Versioning</a> is a nice schema to start: Major version number for uncompatible changes, Minor version for new features and Patch number for bugfixes.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Monitoring software]]></title>
+    <link href="http://pfigue.github.io/blog/2013/09/21/monitoring-software/"/>
+    <updated>2013-09-21T23:59:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/09/21/monitoring-software</id>
+    <content type="html"><![CDATA[<ul>
+<li>Pandora FMS</li>
+<li>Icinga/Nadios</li>
+<li>Riemann</li>
+<li>Splunk</li>
+<li>Munin</li>
+<li>Cacti</li>
+<li>New Relic</li>
+<li>Zabbix</li>
+<li>OpenNMS</li>
+<li>Ganglia</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Deploying static pages]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/19/deploying-static-pages/"/>
+    <updated>2013-08-19T19:16:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/19/deploying-static-pages</id>
+    <content type="html"><![CDATA[<p>A external designer prepares some static pages as landing pages for a platform.</p>
+
+<ul>
+<li>They are stored in a github repository.</li>
+<li>We should provide a comfortable way of deploying them to production.</li>
+<li>Obviously, the external desginer is not allowed to access the production environment.</li>
+</ul>
+
+
+<p>Solution:</p>
+
+<ul>
+<li>we will provide github access to the repository, so the desginer will push/pull directly to github the change she does.</li>
+<li>we will write a deployment script to fetch the last changes from github and put them in production</li>
+</ul>
+
+
+<h2>The deployment script</h2>
+
+<p>Something very easy in shell script: fetch the last changes, clean the filetree and copy it to production</p>
+
+<pre><code>#!/bin/bash
+
+GIT_COPY=/opt/acme/repo-static-pages/
+TARGET=/usr/share/nginx/www/
+TMP_DIR=/tmp/repo-static-pages/
+
+
+### Update local copy
+pushd $GIT_COPY &gt; /dev/null
+git fetch upstream
+git checkout master
+git pull upstream master
+popd &gt; /dev/null
+
+### Put to a temporary location and clean it
+rm -rf $TMP_DIR
+mkdir -p $TMP_DIR
+cp -r $GIT_COPY* $TMP_DIR
+find $TMP_DIR -iname ".git" -type d -exec rm -rf {} \;
+find $TMP_DIR -iname "*.tar.gz" -type f -delete
+find $TMP_DIR -iname "*.tar" -type f -delete
+
+### Deploy
+rm -rf $TARGET
+mkdir $TARGET
+cp -r $TMP_DIR* $TARGET
+
+rm -rf $TMP_DIR 
+</code></pre>
+
+<p>Note that it will deploy the <em>master</em> branch.</p>
+
+<p>Also, we have to prepare the environment:</p>
+
+<ul>
+<li>Create SSH keys that will be used as <strong>deployment keys</strong> for the repository: <code>ssh-keygen -t rsa</code>
+
+<ul>
+<li> Without password to be able to automatise the process.</li>
+<li> Or with password and store the unencrypted key in an SSH keyring.</li>
+</ul>
+</li>
+<li><code>mkdir -p /opt/acme/repo-static-pages/</code></li>
+<li><code>git clone git@github.com:acme/repo-static-pages.git /opt/acme/repo-static-pages/</code></li>
+<li><code>git remote add upstream git@github.com:acme/repo-static-pages.git</code></li>
+</ul>
+
+
+<p>Note that the <em>upstream</em> should use the SSH endpoint instead the HTTPS one, to be able to authentify via the <em>deployment key</em>.</p>
+
+<h2>Deploying</h2>
+
+<p>Alternatives:</p>
+
+<ul>
+<li>deploy manually on demand, but I would prefer to spend the time in something more interesting</li>
+<li>Install a cronjob that weekly, daily or every 5 minutes will deploy the last changes in github.</li>
+<li>Use a githook that will run the deployment when a Pull Request is merged into the master branch of the repo.</li>
+</ul>
+
+
+<p>In any case, we have to be sure that no several deployments are running concurrently.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Adjusting the locale settings]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/"/>
+    <updated>2013-08-15T15:48:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings</id>
+    <content type="html"><![CDATA[<p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+
+<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+
+<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+
+<p>Till here, everything is right. Then, why is it not working?</p>
+
+<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
+
+<pre><code>$ locale-gen de_DE.UTF-8
+</code></pre>
+
+<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+
+<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+
+<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+
+<h2>Setting the right locale for the command line</h2>
+
+<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+
+<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+
+<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Running Django administrative commands as cronjobs]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/"/>
+    <updated>2013-08-14T18:17:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/14/running-django-administrative-commands-as-cronjobs</id>
+    <content type="html"><![CDATA[<p>My best practices (at the moment) to install periodic django administrative commands.</p>
+
+<h1>Crontabs</h1>
+
+<p>First of all, there are three crontabs:</p>
+
+<ul>
+<li> the system one (<em>/etc/crontab</em>)</li>
+<li> and the user&rsquo;s one (<em>/var/spool/cron/crontabs/root</em>, e.g.).</li>
+<li> those in <em>/etc/cron.d/</em>. Newly installed packages may want to install their cronjobs there.</li>
+</ul>
+
+
+<p>The syntax is different:</p>
+
+<ul>
+<li> in the system crontab (and /etc/cron.d) you indicate which user runs the cronjob.</li>
+<li> while in the user&rsquo;s cronjob it is the user itself who runs the cronjobs.</li>
+</ul>
+
+
+<p>And the way to manipulate the files as well:</p>
+
+<ul>
+<li> system crontab is manipulated editing directly <em>/etc/crontab</em> or <em>/etc/cron.d/file</em>. Usually it is a script (like a <em>postinstall script</em> in a package) who updates it.</li>
+<li><p> user&rsquo;s crontab is manipulated via the <code>crontab</code> command:</p>
+
+<ul>
+<li><code>crontab -e</code> to edit. <code>export EDITOR=/usr/bin/vim</code> may help, unles you like <em>nano</em>.</li>
+<li>and <code>crontab -l</code> to list (piping to <em>less</em>, for example).</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Note that the command <strong>checks the syntax of the crontab</strong>.</p>
+
+<p>Where to put the cronjobs is up to you. In my case we were using the system crontab but we switched to root&rsquo;s crontab, as we were introducing the cronjobs manually and would like to have a syntax check, just in case.</p>
+
+<h1>Wrapping for manage.py</h1>
+
+<p>To make <strong>manage.py</strong> run you need to provide some <strong>environment variables</strong>. Some of them to activate the virtual environment of your python webapp, others maybe to provide configuration parameters for your webapp (database server, port, credentials, etc.). Also, the python interpreter you should use is the one in your virtualenv. Maybe a wrapper like this in <code>/root/tools/django_cronjobs_wrapper.sh</code> becomes handy:</p>
+
+<pre><code>#!/bin/bash
+# Wrapper to run cronjobs
+
+if [ $# -eq 0 ]; then
+    echo "usage: $0 {command for manage.py}"
+    exit 1
+fi
+
+export SETTINGS_FILE='/etc/acme/webapp_settings.conf'
+export PYTHONPATH='/opt/acme/webapp_env/'
+export PYTHONHOME='/opt/acme/webapp_env'
+$PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
+</code></pre>
+
+<p>The return value is the one of the manage.py command (useful for cron to know if it failed). <em>Stderr</em> and <em>stdout</em> are not redirected anywhere at the moment.</p>
+
+<p>Indeed, you can extend this wrapper to run <strong>manage.py commands</strong> in the shell, for example a <strong>shell_plus session</strong>, or run a <strong>celery consumer</strong> from <em>Upstart</em> or <em>Supervisor</em>.</p>
+
+<p>Note: I had to change the group of the file to <em>crontab</em> and give it exec. permission:</p>
+
+<pre><code>-rwxr-xr-- 1 root crontab 1055 Aug 7 18:00 tools/django_cronjobs_wrapper.sh
+</code></pre>
+
+<h1>Installing the cronjob</h1>
+
+<p>For example:</p>
+
+<pre><code>5 * * * * /root/tools/django_cronjobs_wrapper.sh a_csv_export --for --example &gt;&gt; /var/log/acme/cronjobs/a_csv_export.log
+</code></pre>
+
+<p>This would be for a user&rsquo;s crontab. Note that <strong>stdout</strong> goes to a logfile, appending lines, so you will have logs for all the executions (but be careful with the log size!)</p>
+
+<p><strong>stderr</strong> is captured by cron, who will send an email if there were messages.</p>
+
+<p>In case the django command (and all the stuff behind) is properly programmed you will get only emails when there are errors during the cronjob execution (e.g. lack of disk space while writing the CSV file, which will trigger an IOError exception).</p>
+
+<h1>Having a collection of cronjobs</h1>
+
+<p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
+
+<p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: heading to 1.0.0]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/"/>
+    <updated>2013-08-13T21:03:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0</id>
+    <content type="html"><![CDATA[<p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: Checking for 401 Unauthorized]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/"/>
+    <updated>2013-08-10T23:59:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized</id>
+    <content type="html"><![CDATA[<p>Some of the services that a webserver provides may be restricted to some specific people.</p>
+
+<p>There are two immediate ways to do this from the webserver level:</p>
+
+<ul>
+<li> Use <em>Auth Digest</em> which is not very safe, unless it is provided under an SSL channel.</li>
+<li> Restrict by IP address.</li>
+</ul>
+
+
+<p>If the webserver configuration opted for <strong>Auth Digest</strong>, we will get an <strong>401 Unauthorized</strong> answer whenever we try to access the ressource without the adequate credentials.</p>
+
+<p>For this reason, I needed a test to be sure that some services are kept only for a few chosen eyes.</p>
+
+<pre><code>Unauthorized(url='http://..../')
+</code></pre>
+
+<p>is the test which does the trick.</p>
+
+<p>If it gets a <strong>401 HTTP response</strong>, everything if fine. Test passes.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: New test to check for content]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/"/>
+    <updated>2013-08-10T23:58:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content</id>
+    <content type="html"><![CDATA[<p>Today I have programmed a new check for Hypnollama.</p>
+
+<p>This one <strong>checks if the retrieved content after accessing an URL matches exactly what we are expecting</strong>.</p>
+
+<p>I had one similar last week, and the difference is that this new one <strong>follows</strong> redirects, while the previous didn&rsquo;t.</p>
+
+<p>Probably I can have used with <em>httplib</em> as I was doing in the past, but it was easier to use <em>urllib2</em> and actually I discovered how I can prevent <em>urllib2</em> to follow redirects when I want (i.e. in most of the tests). So I am moving all tests to <em>urllib2</em></p>
+
+<p>The name for the test is <strong>CheckContent</strong> and can be used like this:</p>
+
+<pre><code>CheckContent(
+        url='http://www.twitter.com/robots.txt',
+        expected_content=\
+'''User-agent: *
+Disallow: /
+''')
+</code></pre>
+
+<p>I think it doesn&rsquo;t need explanations.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Interesting talks at conferences]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/28/interesting-talks-at-conferences/"/>
+    <updated>2013-03-28T16:02:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/28/interesting-talks-at-conferences</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20C10M%20Defending%20The%20Internet%20At%20Scale.mp4">C10M Defending The Internet At Scale &ndash; Robert Graham &ndash; Shmoocon 2013</a></li>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20How%20Smart%20Is%20BlueTooth%20Smart.mp4">How Smart is the Bluetooth Smart &ndash; Mike Ryan &ndash; Shmoocon 2013</a> (<a href="http://lacklustre.net/bluetooth/">more info</a>)</li>
+<li><a href="http://conference.hitb.org/hitbsecconf2013ams/materials/D1T2%20-%20Daniel%20Mende%20-%20Paparazzi%20Over%20IP.pdf">Paparazzi Over IP &ndash; Daniel Mendez &ndash; HitB SecConf 2013 Amsterdan</a></li>
+<li><a href="http://www.thotcon.org/archive/0x1presos/09_THOTCON_0x1-Virus_Writing_Techniques-Sally.pdf">Virus Writing Techniques &ndash; Sally &ndash; Thotcon 0x1</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Read-the-Docs: served standalone with uwsgi]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-uwsgi/"/>
+    <updated>2013-03-23T21:08:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-uwsgi</id>
+    <content type="html"><![CDATA[<p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for <em>uwsgi</em> instead of <em>gunicorn</em>, install it in the virtualenv:</p>
+
+<pre><code># pip install uwsgi
+</code></pre>
+
+<p>Now you should be ready to launch uwsgi for development:</p>
+
+<pre><code># DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite' /opt/readthedocs.org/.venv/bin/uwsgi --home /opt/readthedocs.org/.venv/ --module readthedocs.wsgi --socket 127.0.0.1:8001 --pidfile /var/run/uwsgi-rtfm.localhost.pid --processes 1 --master --max-requests 50 --pythonpath /opt/readthedocs.org/ --reload-on-rss 256 --reload-on-as 256 --limit-as 384 --harakiri 360
+</code></pre>
+
+<p>You shouldn&rsquo;t be able to make an HTTP request as it is using the WSGI protocol.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to the <em>uwsgi</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        uwsgi_pass 127.0.0.1:8001;
+        include uwsgi_params;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that <em>uwsgi</em> is listening in the the port 8001, where <em>nginx</em> is forwarding the requests using the <em>WSGI</em> protocol.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/uwsgi/">Django: How to use Django with uWSGI</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Read-the-Docs: served standalone with gunicorn]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-gunicorn/"/>
+    <updated>2013-03-23T20:27:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/read-the-docs-served-standalone-with-gunicorn</id>
+    <content type="html"><![CDATA[<p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for gunicorn instead of uwsgi, install it in the virtualenv:</p>
+
+<pre><code># pip install gunicorn
+</code></pre>
+
+<p>Now you should be ready to launch gunicorn for development:</p>
+
+<pre><code># export PYTHONPATH='/opt/readthedocs.org/:/opt/readthedocs.org/readthedocs/'
+# export DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite'  # to work with sqlite
+# gunicorn readthedocs.wsgi:application --debug
+</code></pre>
+
+<p>And check if you can connect from the browser to <a href="http://127.0.0.1:8000/">your instance</a>.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to <em>gunicorn</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that this is HTTP proxy passing instead of WSGI passing.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/gunicorn/">Django: How to use Django with Gunicorn</a></li>
+<li><a href="http://docs.gunicorn.org/en/latest/deploy.html">Deploying Gunicorn</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Installing Read-the-Docs for development]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/23/installing-read-the-docs-for-development/"/>
+    <updated>2013-03-23T19:06:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/23/installing-read-the-docs-for-development</id>
+    <content type="html"><![CDATA[<p>This recipe is intended to make <a href="https://readthedocs.org/">Read-the-Docs</a> run with the simplest infraestructure: sqlite as database and the own django webserver. This might not be the most appropiate for a production environment, but could suffice for your own test or for a small development group.</p>
+
+<p>Prepare the required system packages:</p>
+
+<pre><code># apt-get install python2.7 python-setuptools python-pip sqlite git python-virtualenv
+</code></pre>
+
+<p>Fetch the code via HTTPS to avoid ssh authentication:</p>
+
+<pre><code>$ sudo su
+# cd /opt
+# git clone https://github.com/rtfd/readthedocs.org.git
+</code></pre>
+
+<p>Create the Virtual Environment inside of the fetched code:</p>
+
+<pre><code># cd /opt/readthedocs.org/
+# virtualenv -p python2.7 .venv
+# source .venv/bin/activate
+# pip install -r pip_requirements.txt
+</code></pre>
+
+<p>Prepare the database. With the virtualenv activated:</p>
+
+<pre><code># cd /opt/readthedocs.org/readthedocs/
+# ./manage.py syncdb # here you may want to create an admin user.
+# ./manage.py migrate
+# ./manage.py loaddata test_data # this is just for development or testing
+</code></pre>
+
+<p>Run the development server like this:</p>
+
+<pre><code># ./manage.py runserver
+</code></pre>
+
+<p>And generate some documentation, for example the latest version for the project <em>pip</em>:</p>
+
+<pre><code># ./manage.py update_repos pip
+</code></pre>
+
+<p>To generate the documentation for pip version a.b.c:</p>
+
+<pre><code># ./manage.py update_repos pip -V a.b.c
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://read-the-docs.readthedocs.org/en/latest/install.html">http://read-the-docs.readthedocs.org/en/latest/install.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Testing my django webapp API with nose]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose/"/>
+    <updated>2013-03-07T21:24:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose</id>
+    <content type="html"><![CDATA[<p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
+
+<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
+</code></pre>
+
+<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
+
+<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
+
+<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
+
+<pre><code>from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
+from legumes.wsgi import application as app
+
+def test_eggplants_search():
+    c = Client(app, BaseResponse)
+    resp = c.get('/eggplants/search/?color=red')
+    assert( resp.status_code==200 and len(resp.data)&gt;0 )
+</code></pre>
+
+<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
+
+<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Installing cgminer on Ubuntu]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/01/installing-cgminer-on-ubuntu/"/>
+    <updated>2013-03-01T02:30:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/01/installing-cgminer-on-ubuntu</id>
+    <content type="html"><![CDATA[<p>Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start <a href="http://mining.bitcoin.cz/">mining my own coins</a>.</p>
+
+<p>The program I chose was <a href="https://github.com/ckolivas/cgminer">cgminer</a> between those options for people who has <a href="https://en.bitcoin.it/wiki/Cpu_Miner">no GPU</a>.</p>
+
+<p><a href="https://github.com/ckolivas/cgminer">Cgminer</a> can work with CPU, with GPU or with both at the same time.</p>
+
+<h2>Instaling requirements</h2>
+
+<pre><code>apt-get install git autoconf libtool libcurl4-openssl-dev libncurses5-dev pkg-config yasm make
+</code></pre>
+
+<p>These are the program needed to compiler the tool and make it run.</p>
+
+<h2>Installing cgminer itself</h2>
+
+<p>First, become root. Then clone the GitHub repo, prepare the compilation and finally compile it:</p>
+
+<pre><code>$ sudo su
+# cd /opt/
+# git clone git://github.com/ckolivas/cgminer.git
+# cd cgminer/
+# ./autogen.sh --disable-opencl --disable-adl --enable-cpumining
+# CFLAGS="-O2 -Wall -march=native" ./configure --disable-opencl --disable-adl --enable-cpumining 
+# make -j8
+</code></pre>
+
+<p>If you have an GPU and you achieved to make it run, you may want to not disable neither OpenCL nor ADL.</p>
+
+<h2>Testing if it works</h2>
+
+<p>In the same directory <em>/opt/cgminer/</em>:</p>
+
+<pre><code># ./cgminer --benchmark
+</code></pre>
+
+<p>You shouldn&rsquo;t get errors, but see the speed of your CPU(s).</p>
+
+<h2>Launching it for real</h2>
+
+<p>Once you get credentials for a worker in a <a href="https://en.bitcoin.it/wiki/Pooled_mining">mining pool</a>, you can do:</p>
+
+<pre><code># ./cgminer -o http://worker.url.info/ -u worker-user -p worker-password
+</code></pre>
+
+<p>I use a <em>screen</em> or <em>tmux</em> session to keep it running even if I close the terminal, and at the moment I should say that I am getting already some BTCs :)</p>
+
+<p>If you want to continue testing BitCoin, for example transfering coins, you can use one of my addresses as a recipient: <strong>1GnquejgaLW7haKgtzdgUzYwRxPeF2cPEK</strong>. I will be very happy.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Analysing PDFs: a little of OpenAction]]></title>
+    <link href="http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/"/>
+    <updated>2013-02-02T13:21:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction</id>
+    <content type="html"><![CDATA[<p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
+
+<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header: %PDF-1.4
+obj                   28
+endobj                28
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  2
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            1
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>It seems to be complicated, though it is just 2 pages long.</p>
+
+<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
+
+<pre><code>obj 27 0
+Type: /Catalog
+Referencing: 9 0 R, 1 0 R
+  &lt;&lt;
+    /Type /Catalog
+    /Pages 9 0 R
+    /OpenAction [1 0 R /XYZ null null 0]
+    /Lang (de-DE)
+  &gt;&gt;
+</code></pre>
+
+<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
+
+<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
+
+<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Analyzing PDFs]]></title>
+    <link href="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/"/>
+    <updated>2013-02-02T11:41:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs</id>
+    <content type="html"><![CDATA[<p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
+
+<h2>Bank Transfer Order</h2>
+
+<p>An overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf-file
+PDF Header: %PDF-1.4
+obj                   16
+endobj                16
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  1
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>The first thing I saw is the header:</p>
+
+<pre><code>PDF Comment '%PDF-1.4\n'
+PDF Comment '%\xe2\xe3\xcf\xd3\n'
+</code></pre>
+
+<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
+
+<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
+
+<pre><code>obj 16 0
+ Type: 
+ Referencing: 
+  &lt;&lt;
+    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
+    /ModDate (D:201301dddddddd+dd'00')
+    /CreationDate (D:201301dddddddd+dd'00')
+  &gt;&gt;
+ xref
+ PDF Comment '%iText-5.3.2\n'
+</code></pre>
+
+<p>Obviously I replaced part of the dates.</p>
+
+<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
+
+<p>At the end of the file I find also:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Root 150R
+    /ID [&lt;32*x&gt;&lt;32*x&gt;]
+    /Info 160R
+    /Size 17
+   &gt;&gt;
+</code></pre>
+
+<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
+
+<p>There were no Javascript sections. No compression, no encryption.</p>
+
+<h2><em>Print to PDF</em> from Firefox</h2>
+
+<p>Overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf
+PDF Header: %PDF-1.5
+obj                   40
+endobj                40
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  4
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>Rendered with Cairo:</p>
+
+<pre><code>obj 39 0
+ Type: 
+ Referencing: 
+   &lt;&lt;
+     /Creator (cairo 1.9.5 (http:
+     / /cairographics.org))
+     /Producer (cairo 1.9.5 (http:
+     / /cairographics.org))
+   &gt;&gt;
+</code></pre>
+
+<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
+
+<p>Uses a more modern PDF version:</p>
+
+<pre><code>PDF Comment '%PDF-1.5\n'
+PDF Comment '%\xb5\xed\xae\xfb\n'
+</code></pre>
+
+<p>The trailer lacks IDs:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Size 41
+    /Root 400R
+    /Info 390R
+  &gt;&gt;
+</code></pre>
+
+<p>Again, no Javascript, no compression, no encryption.</p>
+
+<h2>Scans done with the fotocopy machine</h2>
+
+<p>The own signature of the machine:</p>
+
+<pre><code>obj 188 0
+  Type: 
+  Referencing: 
+  &lt;&lt;
+    /Creator (bizhub C35)
+    /Producer (bizhub C35)
+    /CreationDate (D:20120411180757+01'00')
+  &gt;&gt;
+</code></pre>
+
+<h2>Links</h2>
+
+<ul>
+<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
+<li><a href="http://itextpdf.com/">the iText library</a></li>
+<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[new git subcommands]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/29/new-git-subcommands/"/>
+    <updated>2012-12-29T16:25:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/29/new-git-subcommands</id>
+    <content type="html"><![CDATA[<p>Whenever you run:</p>
+
+<pre><code>$ git elefant
+</code></pre>
+
+<p><strong>git</strong> will actually run for a <em>git-elefant</em> command in the PATH and run it, if any and if it can be executed.</p>
+
+<p>So, if you want to install <a href="http://stef.thewalter.net/2012/12/git-coverage-useful-code-coverage.html">git-coverage</a> you know you have to put the command somewhere in your PATH and provide +x permission.</p>
+
+<p>See <a href="http://fusiongrokker.com/post/creating-custom-git-commands">Creating Custom Git Commands</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Where is my core dump?]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/28/where-is-my-core-dump-archlinux/"/>
+    <updated>2012-12-28T11:20:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/28/where-is-my-core-dump-archlinux</id>
+    <content type="html"><![CDATA[<h2>Motivation</h2>
+
+<p>I was debugging a process. Such process was crashing and dumping the core. I wanted to load that core into gdb to debug the program, but I was unable to find the core in my filesystem (Arch Linux installation).</p>
+
+<h2>Kernel Configuration</h2>
+
+<p>In <strong>/proc/sys/kernel/</strong> we can find, among others, <strong>core_pattern</strong>, <strong>core_pipe_limit</strong> and <strong>core_uses_pid</strong>:</p>
+
+<ul>
+<li><strong>core_pattern</strong> indicates the filename for the core dump. It has several formatters, like %E and %p to include the directory of the executable or its PID. If it begins with a | (pipe). that means that the dump should be piped to the command provided right after it, for example a command to automatically report crashes to Ubuntu, Mozilla, etc.</li>
+<li><strong>core_pipe_limit</strong> When piping the dump to a program, the kernel should keep the information in /proc/&lt;pid>/ for a while, till the program captures the information and exits. If somehow the process doesn&rsquo;t exit, the next core-dumps will be blocked. This attribute controls how many core-dumps can be piped in parallel.</li>
+<li><strong>core_uses_pid</strong> If dumping a file instead piping the dump to a program, this flag, when it is 1, will make sure that the file name will contain the PID of the process that crashed. Either because %p is present in <strong>core_pattern</strong> or appending &ldquo;.<pid>&rdquo; to the core filename.</li>
+</ul>
+
+
+<p>So, probably you want to be sure that <strong>/proc/sys/kernel/core_pattern</strong> is dumping a file instead of piping to a program. Also, you probably want to know where the file is going to land (i.e. directory):</p>
+
+<pre><code># echo "core" &gt; /proc/sys/kernel/core_pattern
+# echo "1" &gt; /proc/sys/kernel/core_uses_pid
+</code></pre>
+
+<h2>Shell Configuration</h2>
+
+<p>Not only the kernel config., but also the <strong>ulimit</strong> of the shell can interfere if it restricts the ability to write a coredump.</p>
+
+<pre><code>$ ulimit -c
+</code></pre>
+
+<p>will show the current limit.</p>
+
+<p>0 means no core dumps.</p>
+
+<p><em>unlimited</em> means that core dumps of all sizes can be written:</p>
+
+<pre><code>$ ulimit -c unlimited
+</code></pre>
+
+<p>That will change the limit for the current shell. The changed limits are inherited by subshells, so you can use sudo and the sudoed command will use the new limits.</p>
+
+<p>Note that <strong>ulimit</strong> is a shell builtin, not a command.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://www.akadia.com/services/ora_enable_core.html">How do I enable core dumps for everybody</a></li>
+<li><a href="http://stackoverflow.com/questions/17965/generate-a-core-dump-in-linux">generate a core dump in linux</a></li>
+<li><a href="http://www.kernel.org/doc/Documentation/sysctl/kernel.txt">/proc/sys/kernel/ kernel docs</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Setting the hostname in Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux/"/>
+    <updated>2012-12-27T12:55:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux</id>
+    <content type="html"><![CDATA[<p>Set a hostname:</p>
+
+<pre><code>$ sudo hostnamectl set-hostname my-pretty-cow
+</code></pre>
+
+<p>Get the hostname (Linux standard):</p>
+
+<pre><code>$ hostname [-f]
+</code></pre>
+
+<p>See <a href="https://wiki.archlinux.org/index.php/Network_Configuration#Set_the_hostname">Network Configuration: Set the hostname</a></p>
+]]></content>
+  </entry>
+  
+</feed>

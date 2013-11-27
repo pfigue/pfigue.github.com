@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: archlinux | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/archlinux/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Setting the hostname in Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux/"/>
+    <updated>2012-12-27T12:55:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux</id>
+    <content type="html"><![CDATA[<p>Set a hostname:</p>
+
+<pre><code>$ sudo hostnamectl set-hostname my-pretty-cow
+</code></pre>
+
+<p>Get the hostname (Linux standard):</p>
+
+<pre><code>$ hostname [-f]
+</code></pre>
+
+<p>See <a href="https://wiki.archlinux.org/index.php/Network_Configuration#Set_the_hostname">Network Configuration: Set the hostname</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Installing Dropbox in Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/24/installing-dropbox-in-arch-linux/"/>
+    <updated>2012-12-24T05:57:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/24/installing-dropbox-in-arch-linux</id>
+    <content type="html"><![CDATA[<h2>Install</h2>
+
+<p>From AUR you can install with:</p>
+
+<pre><code>yaourt -S dropbox dropbox-cli
+</code></pre>
+
+<h2>Configuration</h2>
+
+<p>This command will show you a GUI in XWindow to configure the account:</p>
+
+<pre><code>$ dropboxd &amp;
+</code></pre>
+
+<p>It will ask you if you want to <em>run it from an unsupported location</em>. The unsupported location is AUR instead of the pacakges of Dropbox, so, say yes.</p>
+
+<p>To start syncing files in the background, use:</p>
+
+<pre><code>$ dropbox start
+</code></pre>
+
+<p>Once there it will start fetching files. You can see the overall status with:</p>
+
+<pre><code>$ dropbox status
+</code></pre>
+
+<p>And the status for a given file:</p>
+
+<pre><code>$ dropbox filestatus &lt;path&gt;
+</code></pre>
+
+<p>You may be interested in enabling the autostart:</p>
+
+<pre><code>$ dropbox autostart y
+</code></pre>
+
+<p>and disable the syncronisation in the local network for security reasons:</p>
+
+<pre><code>$ dropbox lansync n
+</code></pre>
+
+<p>For more options, take a look:</p>
+
+<pre><code>$ dropbox --help
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://wiki.archlinux.org/index.php/Dropbox">Dropbox &ndash; ArchLinux</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Octopress install on Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/22/octopress-install-on-arch-linux/"/>
+    <updated>2012-12-22T23:10:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/22/octopress-install-on-arch-linux</id>
+    <content type="html"><![CDATA[<h2>Requisites</h2>
+
+<ul>
+<li>Git (I assume this is already installed)</li>
+<li>Ruby 1.9.3</li>
+<li>Rbenv</li>
+<li>Ruby-build for Rbenv</li>
+<li>Octopress</li>
+<li>Octopress dependencies</li>
+</ul>
+
+
+<h2>Ruby</h2>
+
+<p>It is just:</p>
+
+<pre><code>$ sudo pacman -S ruby
+</code></pre>
+
+<p>It installed 1.9.3p327 for me. Revisions can be managed via rbenv.</p>
+
+<h2>rbenv and ruby-build</h2>
+
+<p>I installed this via GitHub, the idea was:</p>
+
+<pre><code>$ git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
+</code></pre>
+
+<p>Ruby-build is a plugin for rbenv:</p>
+
+<pre><code>$ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+</code></pre>
+
+<p>It doesn&rsquo;t need further installation, but rbenv needs some changes for the shell:</p>
+
+<pre><code>$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' &gt;&gt; ~/.bash_profile
+$ echo 'eval "$(rbenv init -)"' &gt;&gt; ~/.bash_profile
+</code></pre>
+
+<p>Those changes may give problems if you were using RVM.</p>
+
+<p><strong>RVM and rbenv are not compatible with each other</strong> and both activate wrappers for the shell from .bashrc, .bash_profile or .profile.</p>
+
+<p>Once your shell config is right reload it to apply changes:</p>
+
+<pre><code>$ source .bash_profile
+</code></pre>
+
+<p>Then, you can install another version of Ruby, if you want/need to:</p>
+
+<pre><code>$ rbenv install 1.9.3-p194
+$ rbenv rehash
+</code></pre>
+
+<h2>Octopress and dependencies</h2>
+
+<p>Clone the project and install the ruby environment:</p>
+
+<pre><code>$ git clone git://github.com/imathis/octopress.git octopress
+$ gem install bundler
+$ rbenv rehash
+$ bundle install
+</code></pre>
+
+<p>This last command should start installing all the dependencies for Octopress.</p>
+
+<p>Just to start the configuration:</p>
+
+<pre><code>$ rake install
+</code></pre>
+
+<p>and eventually this to use <a href="http://pages.github.com/">GitHub Pages</a>:</p>
+
+<pre><code>$ rake setup_github_pages
+</code></pre>
+
+<p>From now on, you may want to refer to <a href="http://octopress.org/docs/deploying/github/">Deploying to Github Pages</a></p>
+
+<p>Also, could be interesting add this remote to ease the <a href="http://octopress.org/docs/updating/">Octopress Updates</a>:</p>
+
+<pre><code>$ git remote add octopress git@github.com:imathis/octopress.git
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://octopress.org/docs/setup/">Octopress Setup</a></li>
+<li><a href="https://github.com/sstephenson/rbenv">rbenv</a></li>
+<li><a href="https://github.com/sstephenson/ruby-build">ruby-build</a></li>
+<li><a href="https://wiki.archlinux.org/index.php/Ruby">archlinux &ndash; Ruby</a></li>
+<li><a href="http://octopress.org/docs/deploying/github/">Deploying to Github Pages</a></li>
+<li><a href="http://octopress.org/docs/updating/">Octopress Updates</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

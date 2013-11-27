@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: sysadmin | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/sysadmin/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Monitoring software]]></title>
+    <link href="http://pfigue.github.io/blog/2013/09/21/monitoring-software/"/>
+    <updated>2013-09-21T23:59:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/09/21/monitoring-software</id>
+    <content type="html"><![CDATA[<ul>
+<li>Pandora FMS</li>
+<li>Icinga/Nadios</li>
+<li>Riemann</li>
+<li>Splunk</li>
+<li>Munin</li>
+<li>Cacti</li>
+<li>New Relic</li>
+<li>Zabbix</li>
+<li>OpenNMS</li>
+<li>Ganglia</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Adjusting the locale settings]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/"/>
+    <updated>2013-08-15T15:48:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings</id>
+    <content type="html"><![CDATA[<p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+
+<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+
+<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+
+<p>Till here, everything is right. Then, why is it not working?</p>
+
+<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
+
+<pre><code>$ locale-gen de_DE.UTF-8
+</code></pre>
+
+<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+
+<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+
+<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+
+<h2>Setting the right locale for the command line</h2>
+
+<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+
+<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+
+<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Running Django administrative commands as cronjobs]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/"/>
+    <updated>2013-08-14T18:17:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/14/running-django-administrative-commands-as-cronjobs</id>
+    <content type="html"><![CDATA[<p>My best practices (at the moment) to install periodic django administrative commands.</p>
+
+<h1>Crontabs</h1>
+
+<p>First of all, there are three crontabs:</p>
+
+<ul>
+<li> the system one (<em>/etc/crontab</em>)</li>
+<li> and the user&rsquo;s one (<em>/var/spool/cron/crontabs/root</em>, e.g.).</li>
+<li> those in <em>/etc/cron.d/</em>. Newly installed packages may want to install their cronjobs there.</li>
+</ul>
+
+
+<p>The syntax is different:</p>
+
+<ul>
+<li> in the system crontab (and /etc/cron.d) you indicate which user runs the cronjob.</li>
+<li> while in the user&rsquo;s cronjob it is the user itself who runs the cronjobs.</li>
+</ul>
+
+
+<p>And the way to manipulate the files as well:</p>
+
+<ul>
+<li> system crontab is manipulated editing directly <em>/etc/crontab</em> or <em>/etc/cron.d/file</em>. Usually it is a script (like a <em>postinstall script</em> in a package) who updates it.</li>
+<li><p> user&rsquo;s crontab is manipulated via the <code>crontab</code> command:</p>
+
+<ul>
+<li><code>crontab -e</code> to edit. <code>export EDITOR=/usr/bin/vim</code> may help, unles you like <em>nano</em>.</li>
+<li>and <code>crontab -l</code> to list (piping to <em>less</em>, for example).</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Note that the command <strong>checks the syntax of the crontab</strong>.</p>
+
+<p>Where to put the cronjobs is up to you. In my case we were using the system crontab but we switched to root&rsquo;s crontab, as we were introducing the cronjobs manually and would like to have a syntax check, just in case.</p>
+
+<h1>Wrapping for manage.py</h1>
+
+<p>To make <strong>manage.py</strong> run you need to provide some <strong>environment variables</strong>. Some of them to activate the virtual environment of your python webapp, others maybe to provide configuration parameters for your webapp (database server, port, credentials, etc.). Also, the python interpreter you should use is the one in your virtualenv. Maybe a wrapper like this in <code>/root/tools/django_cronjobs_wrapper.sh</code> becomes handy:</p>
+
+<pre><code>#!/bin/bash
+# Wrapper to run cronjobs
+
+if [ $# -eq 0 ]; then
+    echo "usage: $0 {command for manage.py}"
+    exit 1
+fi
+
+export SETTINGS_FILE='/etc/acme/webapp_settings.conf'
+export PYTHONPATH='/opt/acme/webapp_env/'
+export PYTHONHOME='/opt/acme/webapp_env'
+$PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
+</code></pre>
+
+<p>The return value is the one of the manage.py command (useful for cron to know if it failed). <em>Stderr</em> and <em>stdout</em> are not redirected anywhere at the moment.</p>
+
+<p>Indeed, you can extend this wrapper to run <strong>manage.py commands</strong> in the shell, for example a <strong>shell_plus session</strong>, or run a <strong>celery consumer</strong> from <em>Upstart</em> or <em>Supervisor</em>.</p>
+
+<p>Note: I had to change the group of the file to <em>crontab</em> and give it exec. permission:</p>
+
+<pre><code>-rwxr-xr-- 1 root crontab 1055 Aug 7 18:00 tools/django_cronjobs_wrapper.sh
+</code></pre>
+
+<h1>Installing the cronjob</h1>
+
+<p>For example:</p>
+
+<pre><code>5 * * * * /root/tools/django_cronjobs_wrapper.sh a_csv_export --for --example &gt;&gt; /var/log/acme/cronjobs/a_csv_export.log
+</code></pre>
+
+<p>This would be for a user&rsquo;s crontab. Note that <strong>stdout</strong> goes to a logfile, appending lines, so you will have logs for all the executions (but be careful with the log size!)</p>
+
+<p><strong>stderr</strong> is captured by cron, who will send an email if there were messages.</p>
+
+<p>In case the django command (and all the stuff behind) is properly programmed you will get only emails when there are errors during the cronjob execution (e.g. lack of disk space while writing the CSV file, which will trigger an IOError exception).</p>
+
+<h1>Having a collection of cronjobs</h1>
+
+<p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
+
+<p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: heading to 1.0.0]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/"/>
+    <updated>2013-08-13T21:03:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0</id>
+    <content type="html"><![CDATA[<p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: Checking for 401 Unauthorized]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/"/>
+    <updated>2013-08-10T23:59:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized</id>
+    <content type="html"><![CDATA[<p>Some of the services that a webserver provides may be restricted to some specific people.</p>
+
+<p>There are two immediate ways to do this from the webserver level:</p>
+
+<ul>
+<li> Use <em>Auth Digest</em> which is not very safe, unless it is provided under an SSL channel.</li>
+<li> Restrict by IP address.</li>
+</ul>
+
+
+<p>If the webserver configuration opted for <strong>Auth Digest</strong>, we will get an <strong>401 Unauthorized</strong> answer whenever we try to access the ressource without the adequate credentials.</p>
+
+<p>For this reason, I needed a test to be sure that some services are kept only for a few chosen eyes.</p>
+
+<pre><code>Unauthorized(url='http://..../')
+</code></pre>
+
+<p>is the test which does the trick.</p>
+
+<p>If it gets a <strong>401 HTTP response</strong>, everything if fine. Test passes.</p>
+]]></content>
+  </entry>
+  
+</feed>

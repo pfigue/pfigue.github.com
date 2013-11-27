@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: octopress | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/octopress/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Octopress install on Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/22/octopress-install-on-arch-linux/"/>
+    <updated>2012-12-22T23:10:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/22/octopress-install-on-arch-linux</id>
+    <content type="html"><![CDATA[<h2>Requisites</h2>
+
+<ul>
+<li>Git (I assume this is already installed)</li>
+<li>Ruby 1.9.3</li>
+<li>Rbenv</li>
+<li>Ruby-build for Rbenv</li>
+<li>Octopress</li>
+<li>Octopress dependencies</li>
+</ul>
+
+
+<h2>Ruby</h2>
+
+<p>It is just:</p>
+
+<pre><code>$ sudo pacman -S ruby
+</code></pre>
+
+<p>It installed 1.9.3p327 for me. Revisions can be managed via rbenv.</p>
+
+<h2>rbenv and ruby-build</h2>
+
+<p>I installed this via GitHub, the idea was:</p>
+
+<pre><code>$ git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
+</code></pre>
+
+<p>Ruby-build is a plugin for rbenv:</p>
+
+<pre><code>$ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+</code></pre>
+
+<p>It doesn&rsquo;t need further installation, but rbenv needs some changes for the shell:</p>
+
+<pre><code>$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' &gt;&gt; ~/.bash_profile
+$ echo 'eval "$(rbenv init -)"' &gt;&gt; ~/.bash_profile
+</code></pre>
+
+<p>Those changes may give problems if you were using RVM.</p>
+
+<p><strong>RVM and rbenv are not compatible with each other</strong> and both activate wrappers for the shell from .bashrc, .bash_profile or .profile.</p>
+
+<p>Once your shell config is right reload it to apply changes:</p>
+
+<pre><code>$ source .bash_profile
+</code></pre>
+
+<p>Then, you can install another version of Ruby, if you want/need to:</p>
+
+<pre><code>$ rbenv install 1.9.3-p194
+$ rbenv rehash
+</code></pre>
+
+<h2>Octopress and dependencies</h2>
+
+<p>Clone the project and install the ruby environment:</p>
+
+<pre><code>$ git clone git://github.com/imathis/octopress.git octopress
+$ gem install bundler
+$ rbenv rehash
+$ bundle install
+</code></pre>
+
+<p>This last command should start installing all the dependencies for Octopress.</p>
+
+<p>Just to start the configuration:</p>
+
+<pre><code>$ rake install
+</code></pre>
+
+<p>and eventually this to use <a href="http://pages.github.com/">GitHub Pages</a>:</p>
+
+<pre><code>$ rake setup_github_pages
+</code></pre>
+
+<p>From now on, you may want to refer to <a href="http://octopress.org/docs/deploying/github/">Deploying to Github Pages</a></p>
+
+<p>Also, could be interesting add this remote to ease the <a href="http://octopress.org/docs/updating/">Octopress Updates</a>:</p>
+
+<pre><code>$ git remote add octopress git@github.com:imathis/octopress.git
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://octopress.org/docs/setup/">Octopress Setup</a></li>
+<li><a href="https://github.com/sstephenson/rbenv">rbenv</a></li>
+<li><a href="https://github.com/sstephenson/ruby-build">ruby-build</a></li>
+<li><a href="https://wiki.archlinux.org/index.php/Ruby">archlinux &ndash; Ruby</a></li>
+<li><a href="http://octopress.org/docs/deploying/github/">Deploying to Github Pages</a></li>
+<li><a href="http://octopress.org/docs/updating/">Octopress Updates</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

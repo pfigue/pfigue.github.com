@@ -1,0 +1,1110 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="Once you did the development installation for Read The Docs, you should prepare a wsgi.py file for the django webapp, like this: import os os.environ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/blog/page/2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/23/read-the-docs-served-standalone-with-uwsgi/">Read-the-Docs: served standalone with uwsgi</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-23T21:08:00+01:00" pubdate data-updated="true">Mar 23<span>rd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for <em>uwsgi</em> instead of <em>gunicorn</em>, install it in the virtualenv:</p>
+
+<pre><code># pip install uwsgi
+</code></pre>
+
+<p>Now you should be ready to launch uwsgi for development:</p>
+
+<pre><code># DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite' /opt/readthedocs.org/.venv/bin/uwsgi --home /opt/readthedocs.org/.venv/ --module readthedocs.wsgi --socket 127.0.0.1:8001 --pidfile /var/run/uwsgi-rtfm.localhost.pid --processes 1 --master --max-requests 50 --pythonpath /opt/readthedocs.org/ --reload-on-rss 256 --reload-on-as 256 --limit-as 384 --harakiri 360
+</code></pre>
+
+<p>You shouldn&rsquo;t be able to make an HTTP request as it is using the WSGI protocol.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to the <em>uwsgi</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        uwsgi_pass 127.0.0.1:8001;
+        include uwsgi_params;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that <em>uwsgi</em> is listening in the the port 8001, where <em>nginx</em> is forwarding the requests using the <em>WSGI</em> protocol.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/uwsgi/">Django: How to use Django with uWSGI</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/23/read-the-docs-served-standalone-with-gunicorn/">Read-the-Docs: served standalone with gunicorn</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-23T20:27:00+01:00" pubdate data-updated="true">Mar 23<span>rd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Once you did the <a href="http://pfigue.github.com/blog/2013/03/23/installing-read-the-docs-for-development/">development installation for Read The Docs</a>, you should <a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">prepare a wsgi.py file for the django webapp</a>, like this:</p>
+
+<pre><code>import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "readthedocs.settings")
+
+# This application object is used by the development server
+# as well as any WSGI server configured to use this file.
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+</code></pre>
+
+<p>The <em>redis-cache</em> is a requirement when running with wsgi, with the virtualenv activated:</p>
+
+<pre><code># pip install django-redis-cache
+</code></pre>
+
+<p>In case you opt for gunicorn instead of uwsgi, install it in the virtualenv:</p>
+
+<pre><code># pip install gunicorn
+</code></pre>
+
+<p>Now you should be ready to launch gunicorn for development:</p>
+
+<pre><code># export PYTHONPATH='/opt/readthedocs.org/:/opt/readthedocs.org/readthedocs/'
+# export DJANGO_SETTINGS_MODULE='readthedocs.settings.sqlite'  # to work with sqlite
+# gunicorn readthedocs.wsgi:application --debug
+</code></pre>
+
+<p>And check if you can connect from the browser to <a href="http://127.0.0.1:8000/">your instance</a>.</p>
+
+<p>Once that is working, you can configure <em>nginx</em> to forward the connections to <em>gunicorn</em>.</p>
+
+<p>First, install nginx:</p>
+
+<pre><code># apt-get install nginx-full
+</code></pre>
+
+<p>Follow configuring a new <em>virtual host</em> in the configuration:</p>
+
+<pre><code>cat &gt; /etc/nginx/site-enabled/read-the-docs.localhost &lt; EOF
+server {
+    listen 80;
+    server_name read-the-docs.localhost;
+    access_log  /opt/readthedocs.org/logs/read-the-docs.localhost.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+EOF
+</code></pre>
+
+<p><em>Note</em> that this is HTTP proxy passing instead of WSGI passing.</p>
+
+<p>and path the <em>/etc/hosts</em> adding this alias:</p>
+
+<pre><code>127.0.0.1   read-the-docs.localhost
+</code></pre>
+
+<p>Test and reload the nginx config:</p>
+
+<pre><code># /etc/init.d/nginx testconfig
+# /etc/init.d/nginx reload
+</code></pre>
+
+<p>And now with a browser just <a href="http://read-the-docs.localhost/">visit it</a> and check if you get the expected result.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://docs.djangoproject.com/en/1.4/howto/deployment/wsgi/">Django: How to deploy with WSGI</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/gunicorn/">Django: How to use Django with Gunicorn</a></li>
+<li><a href="http://docs.gunicorn.org/en/latest/deploy.html">Deploying Gunicorn</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/23/installing-read-the-docs-for-development/">Installing Read-the-Docs for development</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-23T19:06:00+01:00" pubdate data-updated="true">Mar 23<span>rd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This recipe is intended to make <a href="https://readthedocs.org/">Read-the-Docs</a> run with the simplest infraestructure: sqlite as database and the own django webserver. This might not be the most appropiate for a production environment, but could suffice for your own test or for a small development group.</p>
+
+<p>Prepare the required system packages:</p>
+
+<pre><code># apt-get install python2.7 python-setuptools python-pip sqlite git python-virtualenv
+</code></pre>
+
+<p>Fetch the code via HTTPS to avoid ssh authentication:</p>
+
+<pre><code>$ sudo su
+# cd /opt
+# git clone https://github.com/rtfd/readthedocs.org.git
+</code></pre>
+
+<p>Create the Virtual Environment inside of the fetched code:</p>
+
+<pre><code># cd /opt/readthedocs.org/
+# virtualenv -p python2.7 .venv
+# source .venv/bin/activate
+# pip install -r pip_requirements.txt
+</code></pre>
+
+<p>Prepare the database. With the virtualenv activated:</p>
+
+<pre><code># cd /opt/readthedocs.org/readthedocs/
+# ./manage.py syncdb # here you may want to create an admin user.
+# ./manage.py migrate
+# ./manage.py loaddata test_data # this is just for development or testing
+</code></pre>
+
+<p>Run the development server like this:</p>
+
+<pre><code># ./manage.py runserver
+</code></pre>
+
+<p>And generate some documentation, for example the latest version for the project <em>pip</em>:</p>
+
+<pre><code># ./manage.py update_repos pip
+</code></pre>
+
+<p>To generate the documentation for pip version a.b.c:</p>
+
+<pre><code># ./manage.py update_repos pip -V a.b.c
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://read-the-docs.readthedocs.org/en/latest/install.html">http://read-the-docs.readthedocs.org/en/latest/install.html</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/07/testing-my-webapp-api-with-nose/">Testing my django webapp API with nose</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T21:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
+
+<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
+</code></pre>
+
+<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
+
+<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
+
+<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
+
+<pre><code>from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
+from legumes.wsgi import application as app
+
+def test_eggplants_search():
+    c = Client(app, BaseResponse)
+    resp = c.get('/eggplants/search/?color=red')
+    assert( resp.status_code==200 and len(resp.data)&gt;0 )
+</code></pre>
+
+<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
+
+<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/01/installing-cgminer-on-ubuntu/">Installing cgminer on Ubuntu</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-01T02:30:00+01:00" pubdate data-updated="true">Mar 1<span>st</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start <a href="http://mining.bitcoin.cz/">mining my own coins</a>.</p>
+
+<p>The program I chose was <a href="https://github.com/ckolivas/cgminer">cgminer</a> between those options for people who has <a href="https://en.bitcoin.it/wiki/Cpu_Miner">no GPU</a>.</p>
+
+<p><a href="https://github.com/ckolivas/cgminer">Cgminer</a> can work with CPU, with GPU or with both at the same time.</p>
+
+<h2>Instaling requirements</h2>
+
+<pre><code>apt-get install git autoconf libtool libcurl4-openssl-dev libncurses5-dev pkg-config yasm make
+</code></pre>
+
+<p>These are the program needed to compiler the tool and make it run.</p>
+
+<h2>Installing cgminer itself</h2>
+
+<p>First, become root. Then clone the GitHub repo, prepare the compilation and finally compile it:</p>
+
+<pre><code>$ sudo su
+# cd /opt/
+# git clone git://github.com/ckolivas/cgminer.git
+# cd cgminer/
+# ./autogen.sh --disable-opencl --disable-adl --enable-cpumining
+# CFLAGS="-O2 -Wall -march=native" ./configure --disable-opencl --disable-adl --enable-cpumining 
+# make -j8
+</code></pre>
+
+<p>If you have an GPU and you achieved to make it run, you may want to not disable neither OpenCL nor ADL.</p>
+
+<h2>Testing if it works</h2>
+
+<p>In the same directory <em>/opt/cgminer/</em>:</p>
+
+<pre><code># ./cgminer --benchmark
+</code></pre>
+
+<p>You shouldn&rsquo;t get errors, but see the speed of your CPU(s).</p>
+
+<h2>Launching it for real</h2>
+
+<p>Once you get credentials for a worker in a <a href="https://en.bitcoin.it/wiki/Pooled_mining">mining pool</a>, you can do:</p>
+
+<pre><code># ./cgminer -o http://worker.url.info/ -u worker-user -p worker-password
+</code></pre>
+
+<p>I use a <em>screen</em> or <em>tmux</em> session to keep it running even if I close the terminal, and at the moment I should say that I am getting already some BTCs :)</p>
+
+<p>If you want to continue testing BitCoin, for example transfering coins, you can use one of my addresses as a recipient: <strong>1GnquejgaLW7haKgtzdgUzYwRxPeF2cPEK</strong>. I will be very happy.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/">Analysing PDFs: a little of OpenAction</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T13:21:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
+
+<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header: %PDF-1.4
+obj                   28
+endobj                28
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  2
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            1
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>It seems to be complicated, though it is just 2 pages long.</p>
+
+<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
+
+<pre><code>obj 27 0
+Type: /Catalog
+Referencing: 9 0 R, 1 0 R
+  &lt;&lt;
+    /Type /Catalog
+    /Pages 9 0 R
+    /OpenAction [1 0 R /XYZ null null 0]
+    /Lang (de-DE)
+  &gt;&gt;
+</code></pre>
+
+<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
+
+<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
+
+<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/02/analyzing-pdfs/">Analyzing PDFs</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
+
+<h2>Bank Transfer Order</h2>
+
+<p>An overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf-file
+PDF Header: %PDF-1.4
+obj                   16
+endobj                16
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  1
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>The first thing I saw is the header:</p>
+
+<pre><code>PDF Comment '%PDF-1.4\n'
+PDF Comment '%\xe2\xe3\xcf\xd3\n'
+</code></pre>
+
+<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
+
+<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
+
+<pre><code>obj 16 0
+ Type: 
+ Referencing: 
+  &lt;&lt;
+    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
+    /ModDate (D:201301dddddddd+dd'00')
+    /CreationDate (D:201301dddddddd+dd'00')
+  &gt;&gt;
+ xref
+ PDF Comment '%iText-5.3.2\n'
+</code></pre>
+
+<p>Obviously I replaced part of the dates.</p>
+
+<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
+
+<p>At the end of the file I find also:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Root 150R
+    /ID [&lt;32*x&gt;&lt;32*x&gt;]
+    /Info 160R
+    /Size 17
+   &gt;&gt;
+</code></pre>
+
+<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
+
+<p>There were no Javascript sections. No compression, no encryption.</p>
+
+<h2><em>Print to PDF</em> from Firefox</h2>
+
+<p>Overview of the file:</p>
+
+<pre><code>PDFiD 0.0.12 /path/to/pdf
+PDF Header: %PDF-1.5
+obj                   40
+endobj                40
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  4
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            0
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>Rendered with Cairo:</p>
+
+<pre><code>obj 39 0
+ Type: 
+ Referencing: 
+   &lt;&lt;
+     /Creator (cairo 1.9.5 (http:
+     / /cairographics.org))
+     /Producer (cairo 1.9.5 (http:
+     / /cairographics.org))
+   &gt;&gt;
+</code></pre>
+
+<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
+
+<p>Uses a more modern PDF version:</p>
+
+<pre><code>PDF Comment '%PDF-1.5\n'
+PDF Comment '%\xb5\xed\xae\xfb\n'
+</code></pre>
+
+<p>The trailer lacks IDs:</p>
+
+<pre><code>trailer
+  &lt;&lt;
+    /Size 41
+    /Root 400R
+    /Info 390R
+  &gt;&gt;
+</code></pre>
+
+<p>Again, no Javascript, no compression, no encryption.</p>
+
+<h2>Scans done with the fotocopy machine</h2>
+
+<p>The own signature of the machine:</p>
+
+<pre><code>obj 188 0
+  Type: 
+  Referencing: 
+  &lt;&lt;
+    /Creator (bizhub C35)
+    /Producer (bizhub C35)
+    /CreationDate (D:20120411180757+01'00')
+  &gt;&gt;
+</code></pre>
+
+<h2>Links</h2>
+
+<ul>
+<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
+<li><a href="http://itextpdf.com/">the iText library</a></li>
+<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/29/new-git-subcommands/">new git subcommands</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-29T16:25:00+01:00" pubdate data-updated="true">Dec 29<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Whenever you run:</p>
+
+<pre><code>$ git elefant
+</code></pre>
+
+<p><strong>git</strong> will actually run for a <em>git-elefant</em> command in the PATH and run it, if any and if it can be executed.</p>
+
+<p>So, if you want to install <a href="http://stef.thewalter.net/2012/12/git-coverage-useful-code-coverage.html">git-coverage</a> you know you have to put the command somewhere in your PATH and provide +x permission.</p>
+
+<p>See <a href="http://fusiongrokker.com/post/creating-custom-git-commands">Creating Custom Git Commands</a>.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/28/where-is-my-core-dump-archlinux/">Where is my core dump?</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-28T11:20:00+01:00" pubdate data-updated="true">Dec 28<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Motivation</h2>
+
+<p>I was debugging a process. Such process was crashing and dumping the core. I wanted to load that core into gdb to debug the program, but I was unable to find the core in my filesystem (Arch Linux installation).</p>
+
+<h2>Kernel Configuration</h2>
+
+<p>In <strong>/proc/sys/kernel/</strong> we can find, among others, <strong>core_pattern</strong>, <strong>core_pipe_limit</strong> and <strong>core_uses_pid</strong>:</p>
+
+<ul>
+<li><strong>core_pattern</strong> indicates the filename for the core dump. It has several formatters, like %E and %p to include the directory of the executable or its PID. If it begins with a | (pipe). that means that the dump should be piped to the command provided right after it, for example a command to automatically report crashes to Ubuntu, Mozilla, etc.</li>
+<li><strong>core_pipe_limit</strong> When piping the dump to a program, the kernel should keep the information in /proc/&lt;pid>/ for a while, till the program captures the information and exits. If somehow the process doesn&rsquo;t exit, the next core-dumps will be blocked. This attribute controls how many core-dumps can be piped in parallel.</li>
+<li><strong>core_uses_pid</strong> If dumping a file instead piping the dump to a program, this flag, when it is 1, will make sure that the file name will contain the PID of the process that crashed. Either because %p is present in <strong>core_pattern</strong> or appending &ldquo;.<pid>&rdquo; to the core filename.</li>
+</ul>
+
+
+<p>So, probably you want to be sure that <strong>/proc/sys/kernel/core_pattern</strong> is dumping a file instead of piping to a program. Also, you probably want to know where the file is going to land (i.e. directory):</p>
+
+<pre><code># echo "core" &gt; /proc/sys/kernel/core_pattern
+# echo "1" &gt; /proc/sys/kernel/core_uses_pid
+</code></pre>
+
+<h2>Shell Configuration</h2>
+
+<p>Not only the kernel config., but also the <strong>ulimit</strong> of the shell can interfere if it restricts the ability to write a coredump.</p>
+
+<pre><code>$ ulimit -c
+</code></pre>
+
+<p>will show the current limit.</p>
+
+<p>0 means no core dumps.</p>
+
+<p><em>unlimited</em> means that core dumps of all sizes can be written:</p>
+
+<pre><code>$ ulimit -c unlimited
+</code></pre>
+
+<p>That will change the limit for the current shell. The changed limits are inherited by subshells, so you can use sudo and the sudoed command will use the new limits.</p>
+
+<p>Note that <strong>ulimit</strong> is a shell builtin, not a command.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://www.akadia.com/services/ora_enable_core.html">How do I enable core dumps for everybody</a></li>
+<li><a href="http://stackoverflow.com/questions/17965/generate-a-core-dump-in-linux">generate a core dump in linux</a></li>
+<li><a href="http://www.kernel.org/doc/Documentation/sysctl/kernel.txt">/proc/sys/kernel/ kernel docs</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/27/setting-the-hostname-in-arch-linux/">Setting the hostname in Arch Linux</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-27T12:55:00+01:00" pubdate data-updated="true">Dec 27<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Set a hostname:</p>
+
+<pre><code>$ sudo hostnamectl set-hostname my-pretty-cow
+</code></pre>
+
+<p>Get the hostname (Linux standard):</p>
+
+<pre><code>$ hostname [-f]
+</code></pre>
+
+<p>See <a href="https://wiki.archlinux.org/index.php/Network_Configuration#Set_the_hostname">Network Configuration: Set the hostname</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/blog/page/3/">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don&#8217;t</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

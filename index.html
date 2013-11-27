@@ -1,1 +1,905 @@
-My Octopress Page is coming soon &hellip;
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="What is Facter? It is a Ruby tool that informs you about facts. As far as I know, it is used often from Puppet, to know about properties of the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-27T18:55:00+01:00" pubdate data-updated="true">Nov 27<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>What is Facter?</h2>
+
+<p>It is a Ruby tool that informs you about facts.</p>
+
+<p>As far as I know, it is used often from Puppet, to know about properties of the environment you are going to provision.</p>
+
+<p>Those properties can be things like <em>Operating System</em>, <em>Version of the kernel</em>, <em>Architecture</em>, <em>Amazon EC2 Instance ID</em>, <em>Available memory</em>, <em>Number of processors</em>, etc.</p>
+
+<p>The <code>facter</code> tool by default has some values like those above: you can run <code>facter</code> in the shell to get a list of <em>facts</em>.</p>
+
+<p>From a Puppet Manifest you could write statements dependent on those facts.
+For example, to install some package when the manifest is applied to a Debian system, and install a different package when applied to a Red Hat one.</p>
+
+<h2>Do you need to define your own Facts?</h2>
+
+<p><strong>Facter</strong> looks for the <em>FACTERLIB</em> environment variable, which may point to a directory, if it is defined.</p>
+
+<p>If you put in that directory a file named <code>hardware_platform.rb</code> (note the <em>.rb</em> extension), and inside you define:</p>
+
+<pre><code># hardware_platform.rb
+
+Facter.add("hardware_platform") do
+    setcode do
+        Facter::Util::Resolution.exec('/bin/uname -i')
+    end
+end
+</code></pre>
+
+<p>There will appear a new <em>Fact</em> called <em>hardware_platform</em>:</p>
+
+<pre><code># facter | grep -i platform
+hardware_platform =&gt; x86_64
+#
+</code></pre>
+
+<p>You can invoke it also via <code>facter hardware_platform</code>:</p>
+
+<pre><code># facter hardware_platform
+x86_64
+#
+</code></pre>
+
+<p>Pay attention, that the file name and the Fact name are the same. An the file extension is <em>.rb</em>.</p>
+
+<p>In this way, you can have your own facts for your Puppet manifests.</p>
+
+<p>Puppet Docs has much <a href="http://docs.puppetlabs.com/guides/custom_facts.html">more information</a>.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don&#8217;t</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-24T00:27:00+02:00" pubdate data-updated="true">Sep 24<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Today I visited <a href="https://secure.trifork.com/berlin-2013/freeevent/index.jsp?eventOID=5783">REST Beyond the Intro Level</a>, where <a href="http://www.innoq.com/blog/st/">Stefan Tilkov</a> explained several concepts regarding REST APIs.</p>
+
+<p>Among other things he mentioned NOT to version APIs, and he took as argument the <a href="http://en.wikipedia.org/wiki/Robustness_principle">Postel&rsquo;s Law</a>:</p>
+
+<pre><code>Be conservative in what you send, be liberal in what you accept
+</code></pre>
+
+<p>Keep your API always backwards compatible. Keep te same behaviour for your ressources, and if you can&rsquo;t keep it, create new ressources.</p>
+
+<p>His idea is that the part of the system serving the API should be <em>conservative</em>, and should avoid <em>semantic jumps</em> when developers deploy new features. At the same time, the consumers of the API should be tolerant when they use it.</p>
+
+<h2>Stefan, I disagree</h2>
+
+<p>If Stefan has a point when he says that an API is always the same and it has the same essential behaviour (e.g. behind the <a href="https://dev.twitter.com/docs/api">Twitter REST API</a> is the same idea, independently of the version: essentially, provide access to read and post tweets.), personally I don&rsquo;t agree with him too much.</p>
+
+<p>I think an API evolves a lot during its life and needs proper versioning. At least, the non-backwards compatible changes should be identified.</p>
+
+<p>In a mature API, well designed, well and long tested, maybe there are no big changes. But in a <strong>new API, built for a not-very-well defined product, change is the constant, and non-backwards-compatible changes happen</strong>.</p>
+
+<p>Also there could be plenty of different clients for an API, each of them programmed for a different version and expecting an specific behaviour. They will break if we don&rsquo;t serve different versions of the API.</p>
+
+<ul>
+<li>One alternative is put the version number in the URL, like <a href="http://api.v1.foo.bar/,">http://api.v1.foo.bar/,</a> or <a href="http://api.foo.bar/v1/">http://api.foo.bar/v1/</a></li>
+<li>Another alternative (I like it more) it passing an argument with the version, like <a href="http://api.foo.bar/?v=1,">http://api.foo.bar/?v=1,</a> and default to the last stable version if no version number is provided.</li>
+</ul>
+
+
+<p>My work experience is <em>startup</em>, and there you don&rsquo;t know always which product are you developing. Decissions change often quite fast and you can&rsquo;t design for the long-term. Maybe if I had work in a more stable environment I had a different opinion and could easily agree with Stefan.</p>
+
+<h2>Semantic Versioning</h2>
+
+<p><a href="http://semver.org/">Semantic Versioning</a> is a nice schema to start: Major version number for uncompatible changes, Minor version for new features and Patch number for bugfixes.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-21T23:59:00+02:00" pubdate data-updated="true">Sep 21<span>st</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul>
+<li>Pandora FMS</li>
+<li>Icinga/Nadios</li>
+<li>Riemann</li>
+<li>Splunk</li>
+<li>Munin</li>
+<li>Cacti</li>
+<li>New Relic</li>
+<li>Zabbix</li>
+<li>OpenNMS</li>
+<li>Ganglia</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-19T19:16:00+02:00" pubdate data-updated="true">Aug 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>A external designer prepares some static pages as landing pages for a platform.</p>
+
+<ul>
+<li>They are stored in a github repository.</li>
+<li>We should provide a comfortable way of deploying them to production.</li>
+<li>Obviously, the external desginer is not allowed to access the production environment.</li>
+</ul>
+
+
+<p>Solution:</p>
+
+<ul>
+<li>we will provide github access to the repository, so the desginer will push/pull directly to github the change she does.</li>
+<li>we will write a deployment script to fetch the last changes from github and put them in production</li>
+</ul>
+
+
+<h2>The deployment script</h2>
+
+<p>Something very easy in shell script: fetch the last changes, clean the filetree and copy it to production</p>
+
+<pre><code>#!/bin/bash
+
+GIT_COPY=/opt/acme/repo-static-pages/
+TARGET=/usr/share/nginx/www/
+TMP_DIR=/tmp/repo-static-pages/
+
+
+### Update local copy
+pushd $GIT_COPY &gt; /dev/null
+git fetch upstream
+git checkout master
+git pull upstream master
+popd &gt; /dev/null
+
+### Put to a temporary location and clean it
+rm -rf $TMP_DIR
+mkdir -p $TMP_DIR
+cp -r $GIT_COPY* $TMP_DIR
+find $TMP_DIR -iname ".git" -type d -exec rm -rf {} \;
+find $TMP_DIR -iname "*.tar.gz" -type f -delete
+find $TMP_DIR -iname "*.tar" -type f -delete
+
+### Deploy
+rm -rf $TARGET
+mkdir $TARGET
+cp -r $TMP_DIR* $TARGET
+
+rm -rf $TMP_DIR 
+</code></pre>
+
+<p>Note that it will deploy the <em>master</em> branch.</p>
+
+<p>Also, we have to prepare the environment:</p>
+
+<ul>
+<li>Create SSH keys that will be used as <strong>deployment keys</strong> for the repository: <code>ssh-keygen -t rsa</code>
+
+<ul>
+<li> Without password to be able to automatise the process.</li>
+<li> Or with password and store the unencrypted key in an SSH keyring.</li>
+</ul>
+</li>
+<li><code>mkdir -p /opt/acme/repo-static-pages/</code></li>
+<li><code>git clone git@github.com:acme/repo-static-pages.git /opt/acme/repo-static-pages/</code></li>
+<li><code>git remote add upstream git@github.com:acme/repo-static-pages.git</code></li>
+</ul>
+
+
+<p>Note that the <em>upstream</em> should use the SSH endpoint instead the HTTPS one, to be able to authentify via the <em>deployment key</em>.</p>
+
+<h2>Deploying</h2>
+
+<p>Alternatives:</p>
+
+<ul>
+<li>deploy manually on demand, but I would prefer to spend the time in something more interesting</li>
+<li>Install a cronjob that weekly, daily or every 5 minutes will deploy the last changes in github.</li>
+<li>Use a githook that will run the deployment when a Pull Request is merged into the master branch of the repo.</li>
+</ul>
+
+
+<p>In any case, we have to be sure that no several deployments are running concurrently.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+
+<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+
+<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+
+<p>Till here, everything is right. Then, why is it not working?</p>
+
+<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
+
+<pre><code>$ locale-gen de_DE.UTF-8
+</code></pre>
+
+<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+
+<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+
+<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+
+<h2>Setting the right locale for the command line</h2>
+
+<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+
+<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+
+<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/">Running Django administrative commands as cronjobs</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-14T18:17:00+02:00" pubdate data-updated="true">Aug 14<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>My best practices (at the moment) to install periodic django administrative commands.</p>
+
+<h1>Crontabs</h1>
+
+<p>First of all, there are three crontabs:</p>
+
+<ul>
+<li> the system one (<em>/etc/crontab</em>)</li>
+<li> and the user&rsquo;s one (<em>/var/spool/cron/crontabs/root</em>, e.g.).</li>
+<li> those in <em>/etc/cron.d/</em>. Newly installed packages may want to install their cronjobs there.</li>
+</ul>
+
+
+<p>The syntax is different:</p>
+
+<ul>
+<li> in the system crontab (and /etc/cron.d) you indicate which user runs the cronjob.</li>
+<li> while in the user&rsquo;s cronjob it is the user itself who runs the cronjobs.</li>
+</ul>
+
+
+<p>And the way to manipulate the files as well:</p>
+
+<ul>
+<li> system crontab is manipulated editing directly <em>/etc/crontab</em> or <em>/etc/cron.d/file</em>. Usually it is a script (like a <em>postinstall script</em> in a package) who updates it.</li>
+<li><p> user&rsquo;s crontab is manipulated via the <code>crontab</code> command:</p>
+
+<ul>
+<li><code>crontab -e</code> to edit. <code>export EDITOR=/usr/bin/vim</code> may help, unles you like <em>nano</em>.</li>
+<li>and <code>crontab -l</code> to list (piping to <em>less</em>, for example).</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Note that the command <strong>checks the syntax of the crontab</strong>.</p>
+
+<p>Where to put the cronjobs is up to you. In my case we were using the system crontab but we switched to root&rsquo;s crontab, as we were introducing the cronjobs manually and would like to have a syntax check, just in case.</p>
+
+<h1>Wrapping for manage.py</h1>
+
+<p>To make <strong>manage.py</strong> run you need to provide some <strong>environment variables</strong>. Some of them to activate the virtual environment of your python webapp, others maybe to provide configuration parameters for your webapp (database server, port, credentials, etc.). Also, the python interpreter you should use is the one in your virtualenv. Maybe a wrapper like this in <code>/root/tools/django_cronjobs_wrapper.sh</code> becomes handy:</p>
+
+<pre><code>#!/bin/bash
+# Wrapper to run cronjobs
+
+if [ $# -eq 0 ]; then
+    echo "usage: $0 {command for manage.py}"
+    exit 1
+fi
+
+export SETTINGS_FILE='/etc/acme/webapp_settings.conf'
+export PYTHONPATH='/opt/acme/webapp_env/'
+export PYTHONHOME='/opt/acme/webapp_env'
+$PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
+</code></pre>
+
+<p>The return value is the one of the manage.py command (useful for cron to know if it failed). <em>Stderr</em> and <em>stdout</em> are not redirected anywhere at the moment.</p>
+
+<p>Indeed, you can extend this wrapper to run <strong>manage.py commands</strong> in the shell, for example a <strong>shell_plus session</strong>, or run a <strong>celery consumer</strong> from <em>Upstart</em> or <em>Supervisor</em>.</p>
+
+<p>Note: I had to change the group of the file to <em>crontab</em> and give it exec. permission:</p>
+
+<pre><code>-rwxr-xr-- 1 root crontab 1055 Aug 7 18:00 tools/django_cronjobs_wrapper.sh
+</code></pre>
+
+<h1>Installing the cronjob</h1>
+
+<p>For example:</p>
+
+<pre><code>5 * * * * /root/tools/django_cronjobs_wrapper.sh a_csv_export --for --example &gt;&gt; /var/log/acme/cronjobs/a_csv_export.log
+</code></pre>
+
+<p>This would be for a user&rsquo;s crontab. Note that <strong>stdout</strong> goes to a logfile, appending lines, so you will have logs for all the executions (but be careful with the log size!)</p>
+
+<p><strong>stderr</strong> is captured by cron, who will send an email if there were messages.</p>
+
+<p>In case the django command (and all the stuff behind) is properly programmed you will get only emails when there are errors during the cronjob execution (e.g. lack of disk space while writing the CSV file, which will trigger an IOError exception).</p>
+
+<h1>Having a collection of cronjobs</h1>
+
+<p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
+
+<p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/">Hypnollama: heading to 1.0.0</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-13T21:03:00+02:00" pubdate data-updated="true">Aug 13<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Hypnollama: Checking for 401 Unauthorized</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-10T23:59:00+02:00" pubdate data-updated="true">Aug 10<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Some of the services that a webserver provides may be restricted to some specific people.</p>
+
+<p>There are two immediate ways to do this from the webserver level:</p>
+
+<ul>
+<li> Use <em>Auth Digest</em> which is not very safe, unless it is provided under an SSL channel.</li>
+<li> Restrict by IP address.</li>
+</ul>
+
+
+<p>If the webserver configuration opted for <strong>Auth Digest</strong>, we will get an <strong>401 Unauthorized</strong> answer whenever we try to access the ressource without the adequate credentials.</p>
+
+<p>For this reason, I needed a test to be sure that some services are kept only for a few chosen eyes.</p>
+
+<pre><code>Unauthorized(url='http://..../')
+</code></pre>
+
+<p>is the test which does the trick.</p>
+
+<p>If it gets a <strong>401 HTTP response</strong>, everything if fine. Test passes.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">Hypnollama: New test to check for content</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-10T23:58:00+02:00" pubdate data-updated="true">Aug 10<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Today I have programmed a new check for Hypnollama.</p>
+
+<p>This one <strong>checks if the retrieved content after accessing an URL matches exactly what we are expecting</strong>.</p>
+
+<p>I had one similar last week, and the difference is that this new one <strong>follows</strong> redirects, while the previous didn&rsquo;t.</p>
+
+<p>Probably I can have used with <em>httplib</em> as I was doing in the past, but it was easier to use <em>urllib2</em> and actually I discovered how I can prevent <em>urllib2</em> to follow redirects when I want (i.e. in most of the tests). So I am moving all tests to <em>urllib2</em></p>
+
+<p>The name for the test is <strong>CheckContent</strong> and can be used like this:</p>
+
+<pre><code>CheckContent(
+        url='http://www.twitter.com/robots.txt',
+        expected_content=\
+'''User-agent: *
+Disallow: /
+''')
+</code></pre>
+
+<p>I think it doesn&rsquo;t need explanations.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/28/interesting-talks-at-conferences/">Interesting talks at conferences</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-28T16:02:00+01:00" pubdate data-updated="true">Mar 28<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20C10M%20Defending%20The%20Internet%20At%20Scale.mp4">C10M Defending The Internet At Scale &ndash; Robert Graham &ndash; Shmoocon 2013</a></li>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20How%20Smart%20Is%20BlueTooth%20Smart.mp4">How Smart is the Bluetooth Smart &ndash; Mike Ryan &ndash; Shmoocon 2013</a> (<a href="http://lacklustre.net/bluetooth/">more info</a>)</li>
+<li><a href="http://conference.hitb.org/hitbsecconf2013ams/materials/D1T2%20-%20Daniel%20Mende%20-%20Paparazzi%20Over%20IP.pdf">Paparazzi Over IP &ndash; Daniel Mendez &ndash; HitB SecConf 2013 Amsterdan</a></li>
+<li><a href="http://www.thotcon.org/archive/0x1presos/09_THOTCON_0x1-Virus_Writing_Techniques-Sally.pdf">Virus Writing Techniques &ndash; Sally &ndash; Thotcon 0x1</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don&#8217;t</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

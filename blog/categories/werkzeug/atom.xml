@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: werkzeug | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/werkzeug/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Testing my django webapp API with nose]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose/"/>
+    <updated>2013-03-07T21:24:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose</id>
+    <content type="html"><![CDATA[<p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
+
+<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
+</code></pre>
+
+<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
+
+<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
+
+<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
+
+<pre><code>from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
+from legumes.wsgi import application as app
+
+def test_eggplants_search():
+    c = Client(app, BaseResponse)
+    resp = c.get('/eggplants/search/?color=red')
+    assert( resp.status_code==200 and len(resp.data)&gt;0 )
+</code></pre>
+
+<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
+
+<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

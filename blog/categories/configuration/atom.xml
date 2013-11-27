@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: configuration | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/configuration/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Setting the hostname in Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux/"/>
+    <updated>2012-12-27T12:55:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux</id>
+    <content type="html"><![CDATA[<p>Set a hostname:</p>
+
+<pre><code>$ sudo hostnamectl set-hostname my-pretty-cow
+</code></pre>
+
+<p>Get the hostname (Linux standard):</p>
+
+<pre><code>$ hostname [-f]
+</code></pre>
+
+<p>See <a href="https://wiki.archlinux.org/index.php/Network_Configuration#Set_the_hostname">Network Configuration: Set the hostname</a></p>
+]]></content>
+  </entry>
+  
+</feed>

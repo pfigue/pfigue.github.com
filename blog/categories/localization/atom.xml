@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: localization | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/localization/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Adjusting the locale settings]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/"/>
+    <updated>2013-08-15T15:48:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings</id>
+    <content type="html"><![CDATA[<p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+
+<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+
+<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+
+<p>Till here, everything is right. Then, why is it not working?</p>
+
+<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
+
+<pre><code>$ locale-gen de_DE.UTF-8
+</code></pre>
+
+<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+
+<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+
+<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+
+<h2>Setting the right locale for the command line</h2>
+
+<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+
+<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+
+<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+]]></content>
+  </entry>
+  
+</feed>

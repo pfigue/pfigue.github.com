@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: porjects | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/porjects/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: heading to 1.0.0]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/"/>
+    <updated>2013-08-13T21:03:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0</id>
+    <content type="html"><![CDATA[<p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+]]></content>
+  </entry>
+  
+</feed>

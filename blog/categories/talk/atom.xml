@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: talk | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/talk/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Interesting talks at conferences]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/28/interesting-talks-at-conferences/"/>
+    <updated>2013-03-28T16:02:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/28/interesting-talks-at-conferences</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20C10M%20Defending%20The%20Internet%20At%20Scale.mp4">C10M Defending The Internet At Scale &ndash; Robert Graham &ndash; Shmoocon 2013</a></li>
+<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20How%20Smart%20Is%20BlueTooth%20Smart.mp4">How Smart is the Bluetooth Smart &ndash; Mike Ryan &ndash; Shmoocon 2013</a> (<a href="http://lacklustre.net/bluetooth/">more info</a>)</li>
+<li><a href="http://conference.hitb.org/hitbsecconf2013ams/materials/D1T2%20-%20Daniel%20Mende%20-%20Paparazzi%20Over%20IP.pdf">Paparazzi Over IP &ndash; Daniel Mendez &ndash; HitB SecConf 2013 Amsterdan</a></li>
+<li><a href="http://www.thotcon.org/archive/0x1presos/09_THOTCON_0x1-Virus_Writing_Techniques-Sally.pdf">Virus Writing Techniques &ndash; Sally &ndash; Thotcon 0x1</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

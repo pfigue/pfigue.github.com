@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: hypnollama | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/hypnollama/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: heading to 1.0.0]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/"/>
+    <updated>2013-08-13T21:03:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0</id>
+    <content type="html"><![CDATA[<p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: Checking for 401 Unauthorized]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/"/>
+    <updated>2013-08-10T23:59:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized</id>
+    <content type="html"><![CDATA[<p>Some of the services that a webserver provides may be restricted to some specific people.</p>
+
+<p>There are two immediate ways to do this from the webserver level:</p>
+
+<ul>
+<li> Use <em>Auth Digest</em> which is not very safe, unless it is provided under an SSL channel.</li>
+<li> Restrict by IP address.</li>
+</ul>
+
+
+<p>If the webserver configuration opted for <strong>Auth Digest</strong>, we will get an <strong>401 Unauthorized</strong> answer whenever we try to access the ressource without the adequate credentials.</p>
+
+<p>For this reason, I needed a test to be sure that some services are kept only for a few chosen eyes.</p>
+
+<pre><code>Unauthorized(url='http://..../')
+</code></pre>
+
+<p>is the test which does the trick.</p>
+
+<p>If it gets a <strong>401 HTTP response</strong>, everything if fine. Test passes.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hypnollama: New test to check for content]]></title>
+    <link href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/"/>
+    <updated>2013-08-10T23:58:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content</id>
+    <content type="html"><![CDATA[<p>Today I have programmed a new check for Hypnollama.</p>
+
+<p>This one <strong>checks if the retrieved content after accessing an URL matches exactly what we are expecting</strong>.</p>
+
+<p>I had one similar last week, and the difference is that this new one <strong>follows</strong> redirects, while the previous didn&rsquo;t.</p>
+
+<p>Probably I can have used with <em>httplib</em> as I was doing in the past, but it was easier to use <em>urllib2</em> and actually I discovered how I can prevent <em>urllib2</em> to follow redirects when I want (i.e. in most of the tests). So I am moving all tests to <em>urllib2</em></p>
+
+<p>The name for the test is <strong>CheckContent</strong> and can be used like this:</p>
+
+<pre><code>CheckContent(
+        url='http://www.twitter.com/robots.txt',
+        expected_content=\
+'''User-agent: *
+Disallow: /
+''')
+</code></pre>
+
+<p>I think it doesn&rsquo;t need explanations.</p>
+]]></content>
+  </entry>
+  
+</feed>

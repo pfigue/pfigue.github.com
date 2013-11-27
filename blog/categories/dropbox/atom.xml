@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: dropbox | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/dropbox/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Installing Dropbox in Arch Linux]]></title>
+    <link href="http://pfigue.github.io/blog/2012/12/24/installing-dropbox-in-arch-linux/"/>
+    <updated>2012-12-24T05:57:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2012/12/24/installing-dropbox-in-arch-linux</id>
+    <content type="html"><![CDATA[<h2>Install</h2>
+
+<p>From AUR you can install with:</p>
+
+<pre><code>yaourt -S dropbox dropbox-cli
+</code></pre>
+
+<h2>Configuration</h2>
+
+<p>This command will show you a GUI in XWindow to configure the account:</p>
+
+<pre><code>$ dropboxd &amp;
+</code></pre>
+
+<p>It will ask you if you want to <em>run it from an unsupported location</em>. The unsupported location is AUR instead of the pacakges of Dropbox, so, say yes.</p>
+
+<p>To start syncing files in the background, use:</p>
+
+<pre><code>$ dropbox start
+</code></pre>
+
+<p>Once there it will start fetching files. You can see the overall status with:</p>
+
+<pre><code>$ dropbox status
+</code></pre>
+
+<p>And the status for a given file:</p>
+
+<pre><code>$ dropbox filestatus &lt;path&gt;
+</code></pre>
+
+<p>You may be interested in enabling the autostart:</p>
+
+<pre><code>$ dropbox autostart y
+</code></pre>
+
+<p>and disable the syncronisation in the local network for security reasons:</p>
+
+<pre><code>$ dropbox lansync n
+</code></pre>
+
+<p>For more options, take a look:</p>
+
+<pre><code>$ dropbox --help
+</code></pre>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://wiki.archlinux.org/index.php/Dropbox">Dropbox &ndash; ArchLinux</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

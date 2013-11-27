@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Analysing PDFs: a little of OpenAction - pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip; PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Analysing PDFs: a little of OpenAction</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T13:21:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
+
+<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header: %PDF-1.4
+obj                   28
+endobj                28
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  2
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            1
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>It seems to be complicated, though it is just 2 pages long.</p>
+
+<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
+
+<pre><code>obj 27 0
+Type: /Catalog
+Referencing: 9 0 R, 1 0 R
+  &lt;&lt;
+    /Type /Catalog
+    /Pages 9 0 R
+    /OpenAction [1 0 R /XYZ null null 0]
+    /Lang (de-DE)
+  &gt;&gt;
+</code></pre>
+
+<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
+
+<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
+
+<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T13:21:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/pdf/'>pdf</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/02/02/analyzing-pdfs/" title="Previous Post: Analyzing PDFs">&laquo; Analyzing PDFs</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/03/01/installing-cgminer-on-ubuntu/" title="Next Post: Installing cgminer on Ubuntu">Installing cgminer on Ubuntu &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don't</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/';
+        var disqus_url = 'http://pfigue.github.io/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: api | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/api/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-27T19:16:10+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Versioning APIs: do or don't]]></title>
+    <link href="http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/"/>
+    <updated>2013-09-24T00:27:00+02:00</updated>
+    <id>http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont</id>
+    <content type="html"><![CDATA[<p>Today I visited <a href="https://secure.trifork.com/berlin-2013/freeevent/index.jsp?eventOID=5783">REST Beyond the Intro Level</a>, where <a href="http://www.innoq.com/blog/st/">Stefan Tilkov</a> explained several concepts regarding REST APIs.</p>
+
+<p>Among other things he mentioned NOT to version APIs, and he took as argument the <a href="http://en.wikipedia.org/wiki/Robustness_principle">Postel&rsquo;s Law</a>:</p>
+
+<pre><code>Be conservative in what you send, be liberal in what you accept
+</code></pre>
+
+<p>Keep your API always backwards compatible. Keep te same behaviour for your ressources, and if you can&rsquo;t keep it, create new ressources.</p>
+
+<p>His idea is that the part of the system serving the API should be <em>conservative</em>, and should avoid <em>semantic jumps</em> when developers deploy new features. At the same time, the consumers of the API should be tolerant when they use it.</p>
+
+<h2>Stefan, I disagree</h2>
+
+<p>If Stefan has a point when he says that an API is always the same and it has the same essential behaviour (e.g. behind the <a href="https://dev.twitter.com/docs/api">Twitter REST API</a> is the same idea, independently of the version: essentially, provide access to read and post tweets.), personally I don&rsquo;t agree with him too much.</p>
+
+<p>I think an API evolves a lot during its life and needs proper versioning. At least, the non-backwards compatible changes should be identified.</p>
+
+<p>In a mature API, well designed, well and long tested, maybe there are no big changes. But in a <strong>new API, built for a not-very-well defined product, change is the constant, and non-backwards-compatible changes happen</strong>.</p>
+
+<p>Also there could be plenty of different clients for an API, each of them programmed for a different version and expecting an specific behaviour. They will break if we don&rsquo;t serve different versions of the API.</p>
+
+<ul>
+<li>One alternative is put the version number in the URL, like <a href="http://api.v1.foo.bar/,">http://api.v1.foo.bar/,</a> or <a href="http://api.foo.bar/v1/">http://api.foo.bar/v1/</a></li>
+<li>Another alternative (I like it more) it passing an argument with the version, like <a href="http://api.foo.bar/?v=1,">http://api.foo.bar/?v=1,</a> and default to the last stable version if no version number is provided.</li>
+</ul>
+
+
+<p>My work experience is <em>startup</em>, and there you don&rsquo;t know always which product are you developing. Decissions change often quite fast and you can&rsquo;t design for the long-term. Maybe if I had work in a more stable environment I had a different opinion and could easily agree with Stefan.</p>
+
+<h2>Semantic Versioning</h2>
+
+<p><a href="http://semver.org/">Semantic Versioning</a> is a nice schema to start: Major version number for uncompatible changes, Minor version for new features and Patch number for bugfixes.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Testing my django webapp API with nose]]></title>
+    <link href="http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose/"/>
+    <updated>2013-03-07T21:24:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose</id>
+    <content type="html"><![CDATA[<p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
+
+<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
+</code></pre>
+
+<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
+
+<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
+
+<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
+
+<pre><code>from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
+from legumes.wsgi import application as app
+
+def test_eggplants_search():
+    c = Client(app, BaseResponse)
+    resp = c.get('/eggplants/search/?color=red')
+    assert( resp.status_code==200 and len(resp.data)&gt;0 )
+</code></pre>
+
+<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
+
+<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>
