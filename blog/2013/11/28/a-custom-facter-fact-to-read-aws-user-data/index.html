@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Analyzing PDFs - pfigue</title>
+  <title>A custom Facter fact to read AWS User-Data - pfigue</title>
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="I found several PDFs in my hard disk. With the pdf-parser and pdfid of Didier Stevens I am taking a look into the internals of these files. Bank &hellip;">
+  <meta name="description" content="I need to do the provisioning of some AWS EC2 Instances depending on their role. Some of them will need to install some packages with some &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/">
+  <link rel="canonical" href="http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -80,7 +80,7 @@
   
   <header>
     
-      <h1 class="entry-title">Analyzing PDFs</h1>
+      <h1 class="entry-title">A custom Facter fact to read AWS User-Data</h1>
     
     
       <p class="meta">
@@ -96,165 +96,95 @@
   
 
 
-<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+<time datetime="2013-11-28T12:35:00+01:00" pubdate data-updated="true">Nov 28<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
+<div class="entry-content"><h2>I need to do the provisioning of some AWS EC2 Instances depending on their role.</h2>
 
-<h2>Bank Transfer Order</h2>
+<p>Some of them will need to install some packages with some configuration, others will need different packages and different configuration, depending on the role they will adopt in the new system.</p>
 
-<p>An overview of the file:</p>
+<p>For this reason I need Puppet to behave in a different way depending on a <strong>fact</strong>, the <em>server flavour</em> of the server who is being provisioned.</p>
 
-<pre><code>PDFiD 0.0.12 /path/to/pdf-file
-PDF Header: %PDF-1.4
-obj                   16
-endobj                16
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  1
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
+<h2>How to communicate the role to Puppet</h2>
+
+<p>The first exercise would be to learn how <a href="http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter/">to write a new dummy fact for Facter</a>, so we are sure we can write facts for Puppet.</p>
+
+<p>The second goal would be to write a new fact that actually reads the role of the server.</p>
+
+<h3>Appending custom information to an EC2 instance.</h3>
+
+<p>I communicate the role (and other information) to a new server <strong>via User-Data</strong>, whenever I <em>Launch a New Instance</em> from the AWS Web Console.
+During the 3rd step, named <em>Configure Instance Details</em>, I have the option to define <em>Advanced Details</em>, one of them the <em>User data</em>.</p>
+
+<p>Once the instance is running, I <strong>can&rsquo;t change that User-Data</strong>. If I want to, I need to destroy that instance and create a new one with the new data.</p>
+
+<p>An <strong>alternative to User-Data is to use <em>Tags</em></strong>, and then the EC2 Command-Line Tools to access and read information from those Tags. But you should mind that there is a <strong>limit of 10 tags per server</strong>, so it may not be the best solution. On the other hand, <strong>you can change the tags while the Instance is running</strong>. No need to destroy it.</p>
+
+<p>I upload a YAML file with all the information, and then, once the new EC2 Instance is up, from the instance itself I can get that YAML file:</p>
+
+<pre><code>$ /usr/bin/curl --silent "http://169.254.169.254/latest/user-data/"
+instance:
+    flavor: application-server
+$
 </code></pre>
 
-<p>The first thing I saw is the header:</p>
+<p>With <a href="https://gist.github.com/pfigue/7690424">some python scripting like</a>:</p>
 
-<pre><code>PDF Comment '%PDF-1.4\n'
-PDF Comment '%\xe2\xe3\xcf\xd3\n'
+<pre><code>import sys
+import yaml
+
+if __name__ == '__main__':
+    contents = sys.stdin.read()
+    document = yaml.load(contents)
+    for key in sys.argv[1:]:
+            try:
+                    document = document[key]
+            except KeyError:
+                    sys.exit(1)
+    sys.stdout.write(str(document))
+    sys.stdout.flush()
+    sys.exit(0)
 </code></pre>
 
-<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
+<p>I can provide the script the YAML via stdin and then ask for some data:</p>
 
-<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
-
-<pre><code>obj 16 0
- Type: 
- Referencing: 
-  &lt;&lt;
-    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
-    /ModDate (D:201301dddddddd+dd'00')
-    /CreationDate (D:201301dddddddd+dd'00')
-  &gt;&gt;
- xref
- PDF Comment '%iText-5.3.2\n'
+<pre><code>$ curl --silent "http://169.254.169.254/latest/user-data/" | python ./ec2-user-data-parser.py instance flavor
+application-server
+$
 </code></pre>
 
-<p>Obviously I replaced part of the dates.</p>
+<h3>Writting the Facter <em>fact</em></h3>
 
-<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
+<p>Writting a new fact is now straight forward (I saved the python script in <code>/root/tools/ec2-user-data-parser.py</code>):</p>
 
-<p>At the end of the file I find also:</p>
+<pre><code># server_flavor.rb
 
-<pre><code>trailer
-  &lt;&lt;
-    /Root 150R
-    /ID [&lt;32*x&gt;&lt;32*x&gt;]
-    /Info 160R
-    /Size 17
-   &gt;&gt;
+Facter.add("server_flavor") do
+  setcode do
+    Facter::Util::Resolution.exec('/usr/bin/curl --silent "http://169.254.169.254/latest/user-data/" | /usr/bin/python /root/tools/ec2-user-data-parser.py instance flavor')
+  end
+end
 </code></pre>
 
-<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
+<p>I save the code to <code>/root/facter/server_flavor.rb</code> and then test it:</p>
 
-<p>There were no Javascript sections. No compression, no encryption.</p>
-
-<h2><em>Print to PDF</em> from Firefox</h2>
-
-<p>Overview of the file:</p>
-
-<pre><code>PDFiD 0.0.12 /path/to/pdf
-PDF Header: %PDF-1.5
-obj                   40
-endobj                40
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  4
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
+<pre><code>$ FACTERLIB=/root/facter/ facter server_flavor
+application-server
+$
 </code></pre>
 
-<p>Rendered with Cairo:</p>
+<p>I may need still to add some <code>export FACTERLIB=/root/facter/</code> to <code>/root/.bashrc</code>, but now my puppet manifests will know which kind of Amazon servers they are provisioning.</p>
 
-<pre><code>obj 39 0
- Type: 
- Referencing: 
-   &lt;&lt;
-     /Creator (cairo 1.9.5 (http:
-     / /cairographics.org))
-     /Producer (cairo 1.9.5 (http:
-     / /cairographics.org))
-   &gt;&gt;
-</code></pre>
-
-<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
-
-<p>Uses a more modern PDF version:</p>
-
-<pre><code>PDF Comment '%PDF-1.5\n'
-PDF Comment '%\xb5\xed\xae\xfb\n'
-</code></pre>
-
-<p>The trailer lacks IDs:</p>
-
-<pre><code>trailer
-  &lt;&lt;
-    /Size 41
-    /Root 400R
-    /Info 390R
-  &gt;&gt;
-</code></pre>
-
-<p>Again, no Javascript, no compression, no encryption.</p>
-
-<h2>Scans done with the fotocopy machine</h2>
-
-<p>The own signature of the machine:</p>
-
-<pre><code>obj 188 0
-  Type: 
-  Referencing: 
-  &lt;&lt;
-    /Creator (bizhub C35)
-    /Producer (bizhub C35)
-    /CreationDate (D:20120411180757+01'00')
-  &gt;&gt;
-</code></pre>
-
-<h2>Links</h2>
+<h2>References:</h2>
 
 <ul>
-<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
-<li><a href="http://itextpdf.com/">the iText library</a></li>
-<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
+<li><a href="https://gist.github.com/pfigue/7690424">The code in a Gist</a></li>
+<li><a href="http://docs.puppetlabs.com/guides/custom_facts.html">Puppet Docs: Custom Facts</a></li>
+<li><a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html">AWS Instance Meta- and User- Data</a></li>
 </ul>
 
 </div>
@@ -279,12 +209,12 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
   
 
 
-<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+<time datetime="2013-11-28T12:35:00+01:00" pubdate data-updated="true">Nov 28<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/pdf/'>pdf</a>
+    <a class='category' href='/blog/categories/aws/'>aws</a>, <a class='category' href='/blog/categories/devops/'>devops</a>, <a class='category' href='/blog/categories/facter/'>facter</a>, <a class='category' href='/blog/categories/puppet/'>puppet</a>
   
 </span>
 
@@ -293,7 +223,7 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/" >Tweet</a>
   
   
   
@@ -304,10 +234,8 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/12/29/new-git-subcommands/" title="Previous Post: new git subcommands">&laquo; new git subcommands</a>
+        <a class="basic-alignment left" href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/" title="Previous Post: How to add custom facts to Facter">&laquo; How to add custom facts to Facter</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/" title="Next Post: Analysing PDFs: a little of OpenAction">Analysing PDFs: a little of OpenAction &raquo;</a>
       
     </p>
   </footer>
@@ -400,8 +328,8 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/';
-        var disqus_url = 'http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/';
+        var disqus_identifier = 'http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/';
+        var disqus_url = 'http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/';
         var disqus_script = 'embed.js';
       
     (function () {

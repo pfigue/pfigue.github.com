@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="What is Facter? It is a Ruby tool that informs you about facts. As far as I know, it is used often from Puppet, to know about properties of the &hellip;">
+  <meta name="description" content="I need to do the provisioning of some AWS EC2 Instances depending on their role. Some of them will need to install some packages with some &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,125 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-28T12:35:00+01:00" pubdate data-updated="true">Nov 28<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>I need to do the provisioning of some AWS EC2 Instances depending on their role.</h2>
+
+<p>Some of them will need to install some packages with some configuration, others will need different packages and different configuration, depending on the role they will adopt in the new system.</p>
+
+<p>For this reason I need Puppet to behave in a different way depending on a <strong>fact</strong>, the <em>server flavour</em> of the server who is being provisioned.</p>
+
+<h2>How to communicate the role to Puppet</h2>
+
+<p>The first exercise would be to learn how <a href="http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter/">to write a new dummy fact for Facter</a>, so we are sure we can write facts for Puppet.</p>
+
+<p>The second goal would be to write a new fact that actually reads the role of the server.</p>
+
+<h3>Appending custom information to an EC2 instance.</h3>
+
+<p>I communicate the role (and other information) to a new server <strong>via User-Data</strong>, whenever I <em>Launch a New Instance</em> from the AWS Web Console.
+During the 3rd step, named <em>Configure Instance Details</em>, I have the option to define <em>Advanced Details</em>, one of them the <em>User data</em>.</p>
+
+<p>Once the instance is running, I <strong>can&rsquo;t change that User-Data</strong>. If I want to, I need to destroy that instance and create a new one with the new data.</p>
+
+<p>An <strong>alternative to User-Data is to use <em>Tags</em></strong>, and then the EC2 Command-Line Tools to access and read information from those Tags. But you should mind that there is a <strong>limit of 10 tags per server</strong>, so it may not be the best solution. On the other hand, <strong>you can change the tags while the Instance is running</strong>. No need to destroy it.</p>
+
+<p>I upload a YAML file with all the information, and then, once the new EC2 Instance is up, from the instance itself I can get that YAML file:</p>
+
+<pre><code>$ /usr/bin/curl --silent "http://169.254.169.254/latest/user-data/"
+instance:
+    flavor: application-server
+$
+</code></pre>
+
+<p>With <a href="https://gist.github.com/pfigue/7690424">some python scripting like</a>:</p>
+
+<pre><code>import sys
+import yaml
+
+if __name__ == '__main__':
+    contents = sys.stdin.read()
+    document = yaml.load(contents)
+    for key in sys.argv[1:]:
+            try:
+                    document = document[key]
+            except KeyError:
+                    sys.exit(1)
+    sys.stdout.write(str(document))
+    sys.stdout.flush()
+    sys.exit(0)
+</code></pre>
+
+<p>I can provide the script the YAML via stdin and then ask for some data:</p>
+
+<pre><code>$ curl --silent "http://169.254.169.254/latest/user-data/" | python ./ec2-user-data-parser.py instance flavor
+application-server
+$
+</code></pre>
+
+<h3>Writting the Facter <em>fact</em></h3>
+
+<p>Writting a new fact is now straight forward (I saved the python script in <code>/root/tools/ec2-user-data-parser.py</code>):</p>
+
+<pre><code># server_flavor.rb
+
+Facter.add("server_flavor") do
+  setcode do
+    Facter::Util::Resolution.exec('/usr/bin/curl --silent "http://169.254.169.254/latest/user-data/" | /usr/bin/python /root/tools/ec2-user-data-parser.py instance flavor')
+  end
+end
+</code></pre>
+
+<p>I save the code to <code>/root/facter/server_flavor.rb</code> and then test it:</p>
+
+<pre><code>$ FACTERLIB=/root/facter/ facter server_flavor
+application-server
+$
+</code></pre>
+
+<p>I may need still to add some <code>export FACTERLIB=/root/facter/</code> to <code>/root/.bashrc</code>, but now my puppet manifests will know which kind of Amazon servers they are provisioning.</p>
+
+<h2>References:</h2>
+
+<ul>
+<li><a href="https://gist.github.com/pfigue/7690424">The code in a Gist</a></li>
+<li><a href="http://docs.puppetlabs.com/guides/custom_facts.html">Puppet Docs: Custom Facts</a></li>
+<li><a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html">AWS Instance Meta- and User- Data</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -736,48 +855,6 @@ Disallow: /
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/28/interesting-talks-at-conferences/">Interesting talks at conferences</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-28T16:02:00+01:00" pubdate data-updated="true">Mar 28<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul>
-<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20C10M%20Defending%20The%20Internet%20At%20Scale.mp4">C10M Defending The Internet At Scale &ndash; Robert Graham &ndash; Shmoocon 2013</a></li>
-<li><a href="http://www.shmoocon.org/2013/videos/Shmoocon%202013%20-%20How%20Smart%20Is%20BlueTooth%20Smart.mp4">How Smart is the Bluetooth Smart &ndash; Mike Ryan &ndash; Shmoocon 2013</a> (<a href="http://lacklustre.net/bluetooth/">more info</a>)</li>
-<li><a href="http://conference.hitb.org/hitbsecconf2013ams/materials/D1T2%20-%20Daniel%20Mende%20-%20Paparazzi%20Over%20IP.pdf">Paparazzi Over IP &ndash; Daniel Mendez &ndash; HitB SecConf 2013 Amsterdan</a></li>
-<li><a href="http://www.thotcon.org/archive/0x1presos/09_THOTCON_0x1-Virus_Writing_Techniques-Sally.pdf">Virus Writing Techniques &ndash; Sally &ndash; Thotcon 0x1</a></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -803,6 +880,10 @@ Disallow: /
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
       </li>
     
@@ -816,10 +897,6 @@ Disallow: /
     
       <li class="post">
         <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a>
       </li>
     
   </ul>

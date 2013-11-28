@@ -4,7 +4,7 @@
   <title><![CDATA[pfigue]]></title>
   <link href="http://pfigue.github.io/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2013-11-27T19:16:10+01:00</updated>
+  <updated>2013-11-28T13:11:35+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -12,6 +12,98 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[A custom Facter fact to read AWS User-Data]]></title>
+    <link href="http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/"/>
+    <updated>2013-11-28T12:35:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data</id>
+    <content type="html"><![CDATA[<h2>I need to do the provisioning of some AWS EC2 Instances depending on their role.</h2>
+
+<p>Some of them will need to install some packages with some configuration, others will need different packages and different configuration, depending on the role they will adopt in the new system.</p>
+
+<p>For this reason I need Puppet to behave in a different way depending on a <strong>fact</strong>, the <em>server flavour</em> of the server who is being provisioned.</p>
+
+<h2>How to communicate the role to Puppet</h2>
+
+<p>The first exercise would be to learn how <a href="http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter/">to write a new dummy fact for Facter</a>, so we are sure we can write facts for Puppet.</p>
+
+<p>The second goal would be to write a new fact that actually reads the role of the server.</p>
+
+<h3>Appending custom information to an EC2 instance.</h3>
+
+<p>I communicate the role (and other information) to a new server <strong>via User-Data</strong>, whenever I <em>Launch a New Instance</em> from the AWS Web Console.
+During the 3rd step, named <em>Configure Instance Details</em>, I have the option to define <em>Advanced Details</em>, one of them the <em>User data</em>.</p>
+
+<p>Once the instance is running, I <strong>can&rsquo;t change that User-Data</strong>. If I want to, I need to destroy that instance and create a new one with the new data.</p>
+
+<p>An <strong>alternative to User-Data is to use <em>Tags</em></strong>, and then the EC2 Command-Line Tools to access and read information from those Tags. But you should mind that there is a <strong>limit of 10 tags per server</strong>, so it may not be the best solution. On the other hand, <strong>you can change the tags while the Instance is running</strong>. No need to destroy it.</p>
+
+<p>I upload a YAML file with all the information, and then, once the new EC2 Instance is up, from the instance itself I can get that YAML file:</p>
+
+<pre><code>$ /usr/bin/curl --silent "http://169.254.169.254/latest/user-data/"
+instance:
+    flavor: application-server
+$
+</code></pre>
+
+<p>With <a href="https://gist.github.com/pfigue/7690424">some python scripting like</a>:</p>
+
+<pre><code>import sys
+import yaml
+
+if __name__ == '__main__':
+    contents = sys.stdin.read()
+    document = yaml.load(contents)
+    for key in sys.argv[1:]:
+            try:
+                    document = document[key]
+            except KeyError:
+                    sys.exit(1)
+    sys.stdout.write(str(document))
+    sys.stdout.flush()
+    sys.exit(0)
+</code></pre>
+
+<p>I can provide the script the YAML via stdin and then ask for some data:</p>
+
+<pre><code>$ curl --silent "http://169.254.169.254/latest/user-data/" | python ./ec2-user-data-parser.py instance flavor
+application-server
+$
+</code></pre>
+
+<h3>Writting the Facter <em>fact</em></h3>
+
+<p>Writting a new fact is now straight forward (I saved the python script in <code>/root/tools/ec2-user-data-parser.py</code>):</p>
+
+<pre><code># server_flavor.rb
+
+Facter.add("server_flavor") do
+  setcode do
+    Facter::Util::Resolution.exec('/usr/bin/curl --silent "http://169.254.169.254/latest/user-data/" | /usr/bin/python /root/tools/ec2-user-data-parser.py instance flavor')
+  end
+end
+</code></pre>
+
+<p>I save the code to <code>/root/facter/server_flavor.rb</code> and then test it:</p>
+
+<pre><code>$ FACTERLIB=/root/facter/ facter server_flavor
+application-server
+$
+</code></pre>
+
+<p>I may need still to add some <code>export FACTERLIB=/root/facter/</code> to <code>/root/.bashrc</code>, but now my puppet manifests will know which kind of Amazon servers they are provisioning.</p>
+
+<h2>References:</h2>
+
+<ul>
+<li><a href="https://gist.github.com/pfigue/7690424">The code in a Gist</a></li>
+<li><a href="http://docs.puppetlabs.com/guides/custom_facts.html">Puppet Docs: Custom Facts</a></li>
+<li><a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html">AWS Instance Meta- and User- Data</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to add custom facts to Facter]]></title>
@@ -1054,25 +1146,6 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
 <li><a href="http://www.kernel.org/doc/Documentation/sysctl/kernel.txt">/proc/sys/kernel/ kernel docs</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Setting the hostname in Arch Linux]]></title>
-    <link href="http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux/"/>
-    <updated>2012-12-27T12:55:00+01:00</updated>
-    <id>http://pfigue.github.io/blog/2012/12/27/setting-the-hostname-in-arch-linux</id>
-    <content type="html"><![CDATA[<p>Set a hostname:</p>
-
-<pre><code>$ sudo hostnamectl set-hostname my-pretty-cow
-</code></pre>
-
-<p>Get the hostname (Linux standard):</p>
-
-<pre><code>$ hostname [-f]
-</code></pre>
-
-<p>See <a href="https://wiki.archlinux.org/index.php/Network_Configuration#Set_the_hostname">Network Configuration: Set the hostname</a></p>
 ]]></content>
   </entry>
   

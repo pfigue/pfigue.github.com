@@ -101,16 +101,22 @@
         <lastmod>2013-11-27T19:14:43+01:00</lastmod>
     </url>
     <url>
+        <loc>
+            http://pfigue.github.io/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/
+        </loc>
+        <lastmod>2013-11-28T13:09:26+01:00</lastmod>
+    </url>
+    <url>
         <loc>http://pfigue.github.io/blog/archives/</loc>
-        <lastmod>2013-11-27T19:14:43+01:00</lastmod>
+        <lastmod>2013-11-28T13:09:26+01:00</lastmod>
     </url>
     <url>
         <loc>http://pfigue.github.io/archives/</loc>
-        <lastmod>2013-11-27T19:14:43+01:00</lastmod>
+        <lastmod>2013-11-28T13:09:26+01:00</lastmod>
     </url>
     <url>
         <loc>http://pfigue.github.io/</loc>
-        <lastmod>2013-11-27T19:14:43+01:00</lastmod>
+        <lastmod>2013-11-28T13:09:26+01:00</lastmod>
     </url>
     <url>
         <loc>http://pfigue.github.io/pfigue/</loc>

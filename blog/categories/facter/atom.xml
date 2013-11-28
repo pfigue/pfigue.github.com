@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: devops | pfigue]]></title>
-  <link href="http://pfigue.github.io/blog/categories/devops/atom.xml" rel="self"/>
+  <title><![CDATA[Category: facter | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/facter/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
   <updated>2013-11-28T13:11:35+01:00</updated>
   <id>http://pfigue.github.io/</id>
@@ -102,61 +102,6 @@ $
 <li><a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html">AWS Instance Meta- and User- Data</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to add custom facts to Facter]]></title>
-    <link href="http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter/"/>
-    <updated>2013-11-27T18:55:00+01:00</updated>
-    <id>http://pfigue.github.io/blog/2013/11/27/how-to-add-custom-facts-to-facter</id>
-    <content type="html"><![CDATA[<h2>What is Facter?</h2>
-
-<p>It is a Ruby tool that informs you about facts.</p>
-
-<p>As far as I know, it is used often from Puppet, to know about properties of the environment you are going to provision.</p>
-
-<p>Those properties can be things like <em>Operating System</em>, <em>Version of the kernel</em>, <em>Architecture</em>, <em>Amazon EC2 Instance ID</em>, <em>Available memory</em>, <em>Number of processors</em>, etc.</p>
-
-<p>The <code>facter</code> tool by default has some values like those above: you can run <code>facter</code> in the shell to get a list of <em>facts</em>.</p>
-
-<p>From a Puppet Manifest you could write statements dependent on those facts.
-For example, to install some package when the manifest is applied to a Debian system, and install a different package when applied to a Red Hat one.</p>
-
-<h2>Do you need to define your own Facts?</h2>
-
-<p><strong>Facter</strong> looks for the <em>FACTERLIB</em> environment variable, which may point to a directory, if it is defined.</p>
-
-<p>If you put in that directory a file named <code>hardware_platform.rb</code> (note the <em>.rb</em> extension), and inside you define:</p>
-
-<pre><code># hardware_platform.rb
-
-Facter.add("hardware_platform") do
-    setcode do
-        Facter::Util::Resolution.exec('/bin/uname -i')
-    end
-end
-</code></pre>
-
-<p>There will appear a new <em>Fact</em> called <em>hardware_platform</em>:</p>
-
-<pre><code># facter | grep -i platform
-hardware_platform =&gt; x86_64
-#
-</code></pre>
-
-<p>You can invoke it also via <code>facter hardware_platform</code>:</p>
-
-<pre><code># facter hardware_platform
-x86_64
-#
-</code></pre>
-
-<p>Pay attention, that the file name and the Fact name are the same. An the file extension is <em>.rb</em>.</p>
-
-<p>In this way, you can have your own facts for your Puppet manifests.</p>
-
-<p>Puppet Docs has much <a href="http://docs.puppetlabs.com/guides/custom_facts.html">more information</a>.</p>
 ]]></content>
   </entry>
   
