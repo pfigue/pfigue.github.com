@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Adjusting the locale settings - pfigue</title>
+  <title>Category: timezone - pfigue</title>
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="This morning we had a problem at work. Our django webapp was raising an UnicodeError exception because it was trying to access a file, whose filename &hellip;">
+  <meta name="description" content="Category: timezone">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/">
+  <link rel="canonical" href="http://pfigue.github.ioblog/categories/timezone/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -76,120 +76,36 @@
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">Adjusting the locale settings</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
-        
-      </p>
+    <h1 class="entry-title">Category: timezone</h1>
     
   </header>
-
-
-<div class="entry-content"><p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
-
-<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
-
-<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
-
-<p>Till here, everything is right. Then, why is it not working?</p>
-
-<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
-
-<pre><code>$ locale-gen de_DE.UTF-8
-</code></pre>
-
-<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
-
-<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
-
-<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
-
-<h2>Setting the right locale for the command line</h2>
-
-<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
-
-<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
-
-<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
-</div>
-
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
-
-      
-
-
-
-
-
+  <div id="blog-archives" class="category">
 
 
 
   
+  <h2>2013</h2>
+
+<article>
+  
+<h1><a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a></h1>
+<time datetime="2013-11-29T16:48:00+01:00" pubdate><span class='month'>Nov</span> <span class='day'>29</span> <span class='year'>2013</span></time>
+
+<footer>
+  <span class="categories">posted in <a class='category' href='/blog/categories/puppet/'>puppet</a>, <a class='category' href='/blog/categories/timezone/'>timezone</a></span>
+</footer>
 
 
-<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/localization/'>localization</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
-  
-</span>
-
-
-    </p>
-    
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/" >Tweet</a>
-  
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-</div>
-
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/" title="Previous Post: Running Django administrative commands as cronjobs">&laquo; Running Django administrative commands as cronjobs</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2013/08/19/deploying-static-pages/" title="Next Post: Deploying static pages">Deploying static pages &raquo;</a>
-      
-    </p>
-  </footer>
 </article>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-  </section>
+
+  
+</article>
 
 </div>
 
@@ -271,10 +187,7 @@
       var disqus_shortname = 'pfigue';
       
         
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/';
-        var disqus_url = 'http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/';
-        var disqus_script = 'embed.js';
+        var disqus_script = 'count.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

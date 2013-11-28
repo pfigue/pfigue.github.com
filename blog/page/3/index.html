@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Set a hostname: $ sudo hostnamectl set-hostname my-pretty-cow Get the hostname (Linux standard): $ hostname [-f] See Network Configuration: Set the &hellip;">
+  <meta name="description" content="Motivation I was debugging a process. Such process was crashing and dumping the core. I wanted to load that core into gdb to debug the program, but I &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,90 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/12/28/where-is-my-core-dump-archlinux/">Where is my core dump?</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-28T11:20:00+01:00" pubdate data-updated="true">Dec 28<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Motivation</h2>
+
+<p>I was debugging a process. Such process was crashing and dumping the core. I wanted to load that core into gdb to debug the program, but I was unable to find the core in my filesystem (Arch Linux installation).</p>
+
+<h2>Kernel Configuration</h2>
+
+<p>In <strong>/proc/sys/kernel/</strong> we can find, among others, <strong>core_pattern</strong>, <strong>core_pipe_limit</strong> and <strong>core_uses_pid</strong>:</p>
+
+<ul>
+<li><strong>core_pattern</strong> indicates the filename for the core dump. It has several formatters, like %E and %p to include the directory of the executable or its PID. If it begins with a | (pipe). that means that the dump should be piped to the command provided right after it, for example a command to automatically report crashes to Ubuntu, Mozilla, etc.</li>
+<li><strong>core_pipe_limit</strong> When piping the dump to a program, the kernel should keep the information in /proc/&lt;pid>/ for a while, till the program captures the information and exits. If somehow the process doesn&rsquo;t exit, the next core-dumps will be blocked. This attribute controls how many core-dumps can be piped in parallel.</li>
+<li><strong>core_uses_pid</strong> If dumping a file instead piping the dump to a program, this flag, when it is 1, will make sure that the file name will contain the PID of the process that crashed. Either because %p is present in <strong>core_pattern</strong> or appending &ldquo;.<pid>&rdquo; to the core filename.</li>
+</ul>
+
+
+<p>So, probably you want to be sure that <strong>/proc/sys/kernel/core_pattern</strong> is dumping a file instead of piping to a program. Also, you probably want to know where the file is going to land (i.e. directory):</p>
+
+<pre><code># echo "core" &gt; /proc/sys/kernel/core_pattern
+# echo "1" &gt; /proc/sys/kernel/core_uses_pid
+</code></pre>
+
+<h2>Shell Configuration</h2>
+
+<p>Not only the kernel config., but also the <strong>ulimit</strong> of the shell can interfere if it restricts the ability to write a coredump.</p>
+
+<pre><code>$ ulimit -c
+</code></pre>
+
+<p>will show the current limit.</p>
+
+<p>0 means no core dumps.</p>
+
+<p><em>unlimited</em> means that core dumps of all sizes can be written:</p>
+
+<pre><code>$ ulimit -c unlimited
+</code></pre>
+
+<p>That will change the limit for the current shell. The changed limits are inherited by subshells, so you can use sudo and the sudoed command will use the new limits.</p>
+
+<p>Note that <strong>ulimit</strong> is a shell builtin, not a command.</p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://www.akadia.com/services/ora_enable_core.html">How do I enable core dumps for everybody</a></li>
+<li><a href="http://stackoverflow.com/questions/17965/generate-a-core-dump-in-linux">generate a core dump in linux</a></li>
+<li><a href="http://www.kernel.org/doc/Documentation/sysctl/kernel.txt">/proc/sys/kernel/ kernel docs</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -365,6 +449,10 @@ $ bundle install
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a>
       </li>
     
@@ -378,10 +466,6 @@ $ bundle install
     
       <li class="post">
         <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a>
       </li>
     
   </ul>

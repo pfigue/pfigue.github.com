@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: timezone | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/timezone/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2013-11-28T17:00:48+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[A Puppet Manifest to set the timezone]]></title>
+    <link href="http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/"/>
+    <updated>2013-11-29T16:48:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone</id>
+    <content type="html"><![CDATA[<p>I am getting to know Puppet and right now I would like to set the timezone of my servers in an automated way via Puppet Manifests.</p>
+
+<h1>Ensuring the presence and content of a file</h1>
+
+<p>I created a new file <code>timezone.pp</code> and wrote inside:</p>
+
+<pre><code>file { '/etc/timezone':
+    ensure =&gt; present,
+    content =&gt; "Europe/Berlin\n",
+}
+</code></pre>
+
+<p>Saved it, and run <code>puppet apply --noop timezone.pp</code> as root. The <em>&mdash;noop</em> is to indicate puppet that I want a dry-run, to not make any changes into the system, just validate the Manifest.</p>
+
+<p>Those 4 lines define a <a href="http://docs.puppetlabs.com/references/latest/type.html#file">ressource type file</a>, the name of the ressource and (in this case) also the path of the file is <em>/etc/timezone</em>, the file should be present into the filesystem and the content should be the indicated one.</p>
+
+<p>With the file ressource I could also define symbolic links, directories, etc.</p>
+
+<p>Once the validation with <code>puppet apply --noop</code> was okay, I moved to the next step.</p>
+
+<h1>Running an external command</h1>
+
+<p>With the <em>exec</em> ressource I can run a command as a given user. The command should be expressed as an absolute path, so <code>/usr/sbin/dpkg-reconfigure</code> instead of <code>dpkg-reconfigure</code>:</p>
+
+<pre><code>exec { 'reconfigure-tzdata':
+        user =&gt; root,
+        group =&gt; root,
+        command =&gt; '/usr/sbin/dpkg-reconfigure --frontend noninteractive tzdata',
+}
+</code></pre>
+
+<p>Also note that the <a href="https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28unattended.29">command won&rsquo;t require input from the user</a> and it will be run as root.</p>
+
+<h1>Reporting and being talkative</h1>
+
+<p>To keep the user updated and make the debugging easier, I would like to notify the user what is going on:</p>
+
+<pre><code>notify { 'timezone-changed':
+        message =&gt; 'Timezone was updated to Europe/Berlin',
+}
+</code></pre>
+
+<p>This ressource will be named <code>timezone-changed</code> and represents a notification message. There are also fail{} and notice{} ressources, afaik.</p>
+
+<h1>Execution order</h1>
+
+<p>Puppet Manifests are declarative. You just write down statement of what do you want to get, not how to get it.</p>
+
+<p>Now I want to express that the <em>timezone-changed notify ressource</em> should be executed only after the <em>reconfigure-tzdata exec ressource</em>. And this one should be executed only after <em>/etc/timezone file ressource</em>:</p>
+
+<pre><code>File['/etc/timezone'] -&gt; Exec['reconfigure-tzdata'] -&gt; Notify['timezone-changed']
+</code></pre>
+
+<p>So, if /etc/timezone already exists and has the right contents and (in general) meets the specification of the ressource we wrote in the manifest, no reconfigure-tzdata will be executed and no notification will happen.</p>
+
+<h1>Applying the changes</h1>
+
+<p>Having all the previous ressources and ordering in <a href="https://gist.github.com/pfigue/7694021">timezone.pp</a>, as root I run <code>puppet apply timezone.pp</code>:</p>
+
+<pre><code>notice: /Stage[main]//File[/etc/timezone]/content: content changed '{md5}4f24b133ba38d8fd565168742c9aedeb' to '{md5}749357f70f40574f632071ec7d5f41a9'
+notice: /Stage[main]//Exec[reconfigure-tzdata]/returns: executed successfully
+notice: Timezone was updated to Europe/Berlin
+notice: /Stage[main]//Notify[timezone-changed]/message: defined 'message' as 'Timezone was updated to Europe/Berlin'
+notice: Finished catalog run in 1.16 seconds
+</code></pre>
+
+<p>Checking:</p>
+
+<pre><code># date
+Thu Nov 28 16:10:51 CET 2013
+#
+</code></pre>
+
+<p>Time zone is now <em>CET</em> which is Berlin, which is right.</p>
+
+<h1>References:</h1>
+
+<ul>
+<li><a href="https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28unattended.29">Unattended timezone change in Ubuntu</a></li>
+<li><a href="http://docs.puppetlabs.com/references/latest/type.html">List of Ressources for Puppet</a></li>
+<li><a href="http://docs.puppetlabs.com/learning/ordering.html">Ressource Ordering in Puppet</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

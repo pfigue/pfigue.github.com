@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Adjusting the locale settings - pfigue</title>
+  <title>A Puppet Manifest to set the timezone - pfigue</title>
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="This morning we had a problem at work. Our django webapp was raising an UnicodeError exception because it was trying to access a file, whose filename &hellip;">
+  <meta name="description" content="I am getting to know Puppet and right now I would like to set the timezone of my servers in an automated way via Puppet Manifests. Ensuring the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/">
+  <link rel="canonical" href="http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -80,7 +80,7 @@
   
   <header>
     
-      <h1 class="entry-title">Adjusting the locale settings</h1>
+      <h1 class="entry-title">A Puppet Manifest to set the timezone</h1>
     
     
       <p class="meta">
@@ -96,39 +96,96 @@
   
 
 
-<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
+<time datetime="2013-11-29T16:48:00+01:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+<div class="entry-content"><p>I am getting to know Puppet and right now I would like to set the timezone of my servers in an automated way via Puppet Manifests.</p>
 
-<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+<h1>Ensuring the presence and content of a file</h1>
 
-<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+<p>I created a new file <code>timezone.pp</code> and wrote inside:</p>
 
-<p>Till here, everything is right. Then, why is it not working?</p>
-
-<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
-
-<pre><code>$ locale-gen de_DE.UTF-8
+<pre><code>file { '/etc/timezone':
+    ensure =&gt; present,
+    content =&gt; "Europe/Berlin\n",
+}
 </code></pre>
 
-<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+<p>Saved it, and run <code>puppet apply --noop timezone.pp</code> as root. The <em>&mdash;noop</em> is to indicate puppet that I want a dry-run, to not make any changes into the system, just validate the Manifest.</p>
 
-<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+<p>Those 4 lines define a <a href="http://docs.puppetlabs.com/references/latest/type.html#file">ressource type file</a>, the name of the ressource and (in this case) also the path of the file is <em>/etc/timezone</em>, the file should be present into the filesystem and the content should be the indicated one.</p>
 
-<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+<p>With the file ressource I could also define symbolic links, directories, etc.</p>
 
-<h2>Setting the right locale for the command line</h2>
+<p>Once the validation with <code>puppet apply --noop</code> was okay, I moved to the next step.</p>
 
-<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+<h1>Running an external command</h1>
 
-<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+<p>With the <em>exec</em> ressource I can run a command as a given user. The command should be expressed as an absolute path, so <code>/usr/sbin/dpkg-reconfigure</code> instead of <code>dpkg-reconfigure</code>:</p>
 
-<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+<pre><code>exec { 'reconfigure-tzdata':
+        user =&gt; root,
+        group =&gt; root,
+        command =&gt; '/usr/sbin/dpkg-reconfigure --frontend noninteractive tzdata',
+}
+</code></pre>
+
+<p>Also note that the <a href="https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28unattended.29">command won&rsquo;t require input from the user</a> and it will be run as root.</p>
+
+<h1>Reporting and being talkative</h1>
+
+<p>To keep the user updated and make the debugging easier, I would like to notify the user what is going on:</p>
+
+<pre><code>notify { 'timezone-changed':
+        message =&gt; 'Timezone was updated to Europe/Berlin',
+}
+</code></pre>
+
+<p>This ressource will be named <code>timezone-changed</code> and represents a notification message. There are also fail{} and notice{} ressources, afaik.</p>
+
+<h1>Execution order</h1>
+
+<p>Puppet Manifests are declarative. You just write down statement of what do you want to get, not how to get it.</p>
+
+<p>Now I want to express that the <em>timezone-changed notify ressource</em> should be executed only after the <em>reconfigure-tzdata exec ressource</em>. And this one should be executed only after <em>/etc/timezone file ressource</em>:</p>
+
+<pre><code>File['/etc/timezone'] -&gt; Exec['reconfigure-tzdata'] -&gt; Notify['timezone-changed']
+</code></pre>
+
+<p>So, if /etc/timezone already exists and has the right contents and (in general) meets the specification of the ressource we wrote in the manifest, no reconfigure-tzdata will be executed and no notification will happen.</p>
+
+<h1>Applying the changes</h1>
+
+<p>Having all the previous ressources and ordering in <a href="https://gist.github.com/pfigue/7694021">timezone.pp</a>, as root I run <code>puppet apply timezone.pp</code>:</p>
+
+<pre><code>notice: /Stage[main]//File[/etc/timezone]/content: content changed '{md5}4f24b133ba38d8fd565168742c9aedeb' to '{md5}749357f70f40574f632071ec7d5f41a9'
+notice: /Stage[main]//Exec[reconfigure-tzdata]/returns: executed successfully
+notice: Timezone was updated to Europe/Berlin
+notice: /Stage[main]//Notify[timezone-changed]/message: defined 'message' as 'Timezone was updated to Europe/Berlin'
+notice: Finished catalog run in 1.16 seconds
+</code></pre>
+
+<p>Checking:</p>
+
+<pre><code># date
+Thu Nov 28 16:10:51 CET 2013
+#
+</code></pre>
+
+<p>Time zone is now <em>CET</em> which is Berlin, which is right.</p>
+
+<h1>References:</h1>
+
+<ul>
+<li><a href="https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28unattended.29">Unattended timezone change in Ubuntu</a></li>
+<li><a href="http://docs.puppetlabs.com/references/latest/type.html">List of Ressources for Puppet</a></li>
+<li><a href="http://docs.puppetlabs.com/learning/ordering.html">Ressource Ordering in Puppet</a></li>
+</ul>
+
 </div>
 
 
@@ -151,12 +208,12 @@
   
 
 
-<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
+<time datetime="2013-11-29T16:48:00+01:00" pubdate data-updated="true">Nov 29<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/localization/'>localization</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+    <a class='category' href='/blog/categories/puppet/'>puppet</a>, <a class='category' href='/blog/categories/timezone/'>timezone</a>
   
 </span>
 
@@ -165,7 +222,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/" >Tweet</a>
   
   
   
@@ -176,10 +233,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/" title="Previous Post: Running Django administrative commands as cronjobs">&laquo; Running Django administrative commands as cronjobs</a>
+        <a class="basic-alignment left" href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/" title="Previous Post: A custom Facter fact to read AWS User-Data">&laquo; A custom Facter fact to read AWS User-Data</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/08/19/deploying-static-pages/" title="Next Post: Deploying static pages">Deploying static pages &raquo;</a>
       
     </p>
   </footer>
@@ -272,8 +327,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/';
-        var disqus_url = 'http://pfigue.github.io/blog/2013/08/15/adjusting-the-locale-settings/';
+        var disqus_identifier = 'http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/';
+        var disqus_url = 'http://pfigue.github.io/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/';
         var disqus_script = 'embed.js';
       
     (function () {
