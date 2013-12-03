@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="I am getting to know Puppet and right now I would like to set the timezone of my servers in an automated way via Puppet Manifests. Ensuring the &hellip;">
+  <meta name="description" content="Why a name server and why dnsmasq. I have a datacenter (Acme GmbH.), with several environments (green, blue, live, staging), each environment with &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,217 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-06T17:07:00+01:00" pubdate data-updated="true">Dec 6<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>Why a name server and why dnsmasq.</h1>
+
+<p>I have a datacenter (Acme GmbH.), with several environments (green, blue, live, staging), each environment with several servers (server1, server2, &hellip; serverX) and I want to use a domain name service to name every server on the datacenter, so every server can easily know what is the IP of server3.staging.acme, for example.</p>
+
+<p>I may want also to create some aliases like puppet-master.acme.</p>
+
+<p>While I could do this with BIND, it actually seems easier to me to user <em>dnsmasq</em>.</p>
+
+<p>dnsmasq is a small DNS server easy to configure. It has also DHCP integration (and TFTP, PXE, etc.) but it is not what I am looking for.</p>
+
+<p>As alternatives to use my own DNS server, I could choose some setup with Route 53 as user of Amazon. Digital Ocean or other providers may have their own systems.</p>
+
+<h1>Installing</h1>
+
+<p>In Ubuntu 12.04 it is just <code>sudo apt-get install dnsmasq</code>. It will launch the service, that you can stop via <code>/etc/init.d/dnsmasq stop</code>.</p>
+
+<p>The configuration file is in <code>/etc/dnsmasq.conf</code>. The files in <code>/etc/dnsmasq.d/</code> can be included from dnsmasq.conf, but per default they aren&rsquo;t.</p>
+
+<h1>Testing and finding the right configuration</h1>
+
+<p>The <em>&mdash;no-daemon</em> option will be useful to do test in the command line:</p>
+
+<pre><code>/usr/sbin/dnsmasq --no-daemon
+</code></pre>
+
+<p><em>&mdash;no-hosts</em> and <em>&mdash;addn-hosts=/etc/hosts.acme</em> will prevent dnsmasq to read /etc/hosts and instead load the datacenter zone configuration from <code>/etc/hosts.acme</code>:</p>
+
+<pre><code>/usr/sbin/dnsmasq --no-daemon --no-hosts --addn-hosts=/etc/hosts.acme
+</code></pre>
+
+<p><em>&mdash;interface=eth0</em> will force dnsmasq to listen only on that interface. In my case, this will run in an AWS EC2 Instance, so I can configure in the Amazon Web Console the Security Groups to firewall the service and let only the legit servers to access the zone entries instead of everybody in the Amazon Datacenter network.</p>
+
+<p><em>&mdash;no-resolv</em> will avoid dnsmasq to read the list of name servers from <code>/etc/resolv.conf</code> and <em>&mdash;server=&ldquo;8.8.4.4&rdquo;</em> will provide a default one, in this case a Google nameserver</p>
+
+<pre><code>/usr/sbin/dnsmasq --no-daemon --no-hosts --addn-hosts=/etc/hosts.acme --interface=eth0 --no-resolv --server="8.8.4.4"
+</code></pre>
+
+<h1>Setting up the DNS server</h1>
+
+<p>Instead of launching the command manually, we will launch the service via <code>/etc/init.d/dnsmasq start|status|stop</code>. The default configuration is <code>/etc/dnsmasq.conf</code> and I have this there:</p>
+
+<pre><code>no-resolv
+server=8.8.4.4
+server=8.8.8.8
+interface=eth0
+no-dhcp-interface=eth0
+no-hosts
+addn-hosts=/etc/hosts.acme
+log-queries
+log-dhcp
+</code></pre>
+
+<p>The <strong>user</strong> and <strong>group</strong> directives are not needed in Ubuntu, as the server is run always ad <strong>dnsmasq</strong> user. Only during testing we will use <strong>log-queries</strong> and <strong>log-dhcp</strong>, to see what is going on. Once finished the tests, we can remove them.</p>
+
+<p>In <code>/etc/hosts.acme</code> just 1 entry (if you are copying tis, be sure of using a valid IP address, with numbers, not that z.z.z.z):</p>
+
+<pre><code>z.z.z.z     server2.staging.acme
+</code></pre>
+
+<p>If I launch the service like <code>/usr/sbin/dnsmasq -C /etc/dnsmasq.conf --no-daemon</code> (as root) I get this:</p>
+
+<pre><code>dnsmasq: started, version 2.59 cachesize 150
+dnsmasq: compile time options: IPv6 GNU-getopt DBus i18n DHCP TFTP conntrack IDN
+dnsmasq: using nameserver 8.8.8.8#53
+dnsmasq: using nameserver 8.8.4.4#53
+dnsmasq: read /etc/hosts.acme - 1 addresses
+</code></pre>
+
+<p>Then, from other server (IP: y.y.y.y) with access to port 53/udp of the server (name: server1.acme, IP: x.x.x.x) where dnsmasq is running, I do:</p>
+
+<pre><code># dig @server1.acme www.google.de
+
+; &lt;&lt;&gt;&gt; DiG 9.8.1-P1 &lt;&lt;&gt;&gt; @server1.acme www.google.de
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 43199
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.google.de.                 IN      A
+
+;; ANSWER SECTION:
+www.google.de.          300     IN      A       74.125.24.94
+
+;; Query time: 21 msec
+;; SERVER: x.x.x.x#53(x.x.x.x)
+;; WHEN: Tue Dec  3 16:35:58 2013
+;; MSG SIZE  rcvd: 47
+</code></pre>
+
+<p>It seems the name server can resolve external domain names. And actually I see in the server:</p>
+
+<pre><code>dnsmasq: query[A] www.google.de from y.y.y.y
+dnsmasq: forwarded www.google.de to 8.8.4.4
+dnsmasq: forwarded www.google.de to 8.8.8.8
+dnsmasq: reply www.google.de is 74.125.24.94
+</code></pre>
+
+<p>So, it seems to be forwarding my requests to google&rsquo;s DNSs (8.8.4.4 and 8.8.8.8) as they are not in the cache of dnsmasq.</p>
+
+<p>If I ask again (2 seconds later) for the same external name:</p>
+
+<pre><code>dig @server1.acme www.google.de
+
+; &lt;&lt;&gt;&gt; DiG 9.8.1-P1 &lt;&lt;&gt;&gt; @server1.acme www.google.de
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 36570
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.google.de.                 IN      A
+
+;; ANSWER SECTION:
+www.google.de.          298     IN      A       74.125.24.94
+
+;; Query time: 2 msec
+;; SERVER: x.x.x.x#53(x.x.x.x)
+;; WHEN: Tue Dec  3 16:36:00 2013
+;; MSG SIZE  rcvd: 47
+</code></pre>
+
+<p>The answer I get has a TTL 2 seconds lower and in the server I see:</p>
+
+<pre><code>dnsmasq: query[A] www.google.de from y.y.y.y
+dnsmasq: cached www.google.de is 74.125.24.94
+</code></pre>
+
+<p>This time dnsmasq had the answer itself and didn&rsquo;t need to forward. In fact the query time went from 21msec to 2msec.</p>
+
+<p>If I ask for an internal name:</p>
+
+<pre><code>dig @server1.acme server2.staging.acme
+
+; &lt;&lt;&gt;&gt; DiG 9.8.1-P1 &lt;&lt;&gt;&gt; @server1.acme server2.staging.acme;
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 54617
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;server2.staging.acme.           IN      A
+
+;; ANSWER SECTION:
+server2.staging.acme.    0       IN      A       z.z.z.z
+
+;; Query time: 2 msec
+;; SERVER: x.x.x.x#53(x.x.x.x)
+;; WHEN: Tue Dec  3 16:36:13 2013
+;; MSG SIZE  rcvd: 53
+</code></pre>
+
+<p>I get this in the server:</p>
+
+<pre><code>dnsmasq: query[A] server2.staging.acme from y.y.y.y
+dnsmasq: /etc/hosts.acme server2.staging.acme is z.z.z.z
+</code></pre>
+
+<p>The server is also able to solve internal names.</p>
+
+<h1>Automatising the installation with Puppet</h1>
+
+<p>I have a <a href="https://gist.github.com/pfigue/7772289">Gist with an draft of a manifest</a> for Puppet.</p>
+
+<p>Use <code>puppet apply --noop dnsmasq.pp</code> to check it (eventually w/o &mdash;noop).</p>
+
+<h1>References:</h1>
+
+<ul>
+<li><a href="http://www.thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html">dnsmasq manual page</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Comparison_of_DNS_server_software">Comparison of DNS Server Software</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -864,61 +1075,6 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Hypnollama: Checking for 401 Unauthorized</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-10T23:59:00+02:00" pubdate data-updated="true">Aug 10<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Some of the services that a webserver provides may be restricted to some specific people.</p>
-
-<p>There are two immediate ways to do this from the webserver level:</p>
-
-<ul>
-<li> Use <em>Auth Digest</em> which is not very safe, unless it is provided under an SSL channel.</li>
-<li> Restrict by IP address.</li>
-</ul>
-
-
-<p>If the webserver configuration opted for <strong>Auth Digest</strong>, we will get an <strong>401 Unauthorized</strong> answer whenever we try to access the ressource without the adequate credentials.</p>
-
-<p>For this reason, I needed a test to be sure that some services are kept only for a few chosen eyes.</p>
-
-<pre><code>Unauthorized(url='http://..../')
-</code></pre>
-
-<p>is the test which does the trick.</p>
-
-<p>If it gets a <strong>401 HTTP response</strong>, everything if fine. Test passes.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -944,6 +1100,10 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
       </li>
     
@@ -957,10 +1117,6 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
     
       <li class="post">
         <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don&#8217;t</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/09/21/monitoring-software/">Monitoring software</a>
       </li>
     
   </ul>
