@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: ubuntu | pfigue]]></title>
-  <link href="http://pfigue.github.io/blog/categories/ubuntu/atom.xml" rel="self"/>
+  <title><![CDATA[Category: dhcp | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/dhcp/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
   <updated>2013-12-04T13:15:29+01:00</updated>
   <id>http://pfigue.github.io/</id>
@@ -50,61 +50,6 @@ iface eth0 inet dhcp
 </code></pre>
 
 <p>Now if I restart the <code>networking</code> service again, <code>/etc/resolv.conf</code> will have the right domain and nameservers.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Installing cgminer on Ubuntu]]></title>
-    <link href="http://pfigue.github.io/blog/2013/03/01/installing-cgminer-on-ubuntu/"/>
-    <updated>2013-03-01T02:30:00+01:00</updated>
-    <id>http://pfigue.github.io/blog/2013/03/01/installing-cgminer-on-ubuntu</id>
-    <content type="html"><![CDATA[<p>Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start <a href="http://mining.bitcoin.cz/">mining my own coins</a>.</p>
-
-<p>The program I chose was <a href="https://github.com/ckolivas/cgminer">cgminer</a> between those options for people who has <a href="https://en.bitcoin.it/wiki/Cpu_Miner">no GPU</a>.</p>
-
-<p><a href="https://github.com/ckolivas/cgminer">Cgminer</a> can work with CPU, with GPU or with both at the same time.</p>
-
-<h2>Instaling requirements</h2>
-
-<pre><code>apt-get install git autoconf libtool libcurl4-openssl-dev libncurses5-dev pkg-config yasm make
-</code></pre>
-
-<p>These are the program needed to compiler the tool and make it run.</p>
-
-<h2>Installing cgminer itself</h2>
-
-<p>First, become root. Then clone the GitHub repo, prepare the compilation and finally compile it:</p>
-
-<pre><code>$ sudo su
-# cd /opt/
-# git clone git://github.com/ckolivas/cgminer.git
-# cd cgminer/
-# ./autogen.sh --disable-opencl --disable-adl --enable-cpumining
-# CFLAGS="-O2 -Wall -march=native" ./configure --disable-opencl --disable-adl --enable-cpumining 
-# make -j8
-</code></pre>
-
-<p>If you have an GPU and you achieved to make it run, you may want to not disable neither OpenCL nor ADL.</p>
-
-<h2>Testing if it works</h2>
-
-<p>In the same directory <em>/opt/cgminer/</em>:</p>
-
-<pre><code># ./cgminer --benchmark
-</code></pre>
-
-<p>You shouldn&rsquo;t get errors, but see the speed of your CPU(s).</p>
-
-<h2>Launching it for real</h2>
-
-<p>Once you get credentials for a worker in a <a href="https://en.bitcoin.it/wiki/Pooled_mining">mining pool</a>, you can do:</p>
-
-<pre><code># ./cgminer -o http://worker.url.info/ -u worker-user -p worker-password
-</code></pre>
-
-<p>I use a <em>screen</em> or <em>tmux</em> session to keep it running even if I close the terminal, and at the moment I should say that I am getting already some BTCs :)</p>
-
-<p>If you want to continue testing BitCoin, for example transfering coins, you can use one of my addresses as a recipient: <strong>1GnquejgaLW7haKgtzdgUzYwRxPeF2cPEK</strong>. I will be very happy.</p>
 ]]></content>
   </entry>
   

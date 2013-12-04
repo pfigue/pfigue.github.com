@@ -4,7 +4,7 @@
   <title><![CDATA[Category: sysadmin | pfigue]]></title>
   <link href="http://pfigue.github.io/blog/categories/sysadmin/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2013-12-03T17:46:21+01:00</updated>
+  <updated>2013-12-04T13:15:29+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -198,6 +198,46 @@ dnsmasq: /etc/hosts.acme server2.staging.acme is z.z.z.z
   </entry>
   
   <entry>
+    <title type="html"><![CDATA[Replacing DHCP automatic name resolution config with my own static one]]></title>
+    <link href="http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/"/>
+    <updated>2013-12-04T13:07:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one</id>
+    <content type="html"><![CDATA[<p><em>Problem1:</em> I have an AWS EC2 Instance (Ubuntu 12.04) where I want to use <a href="http://pfigue.github.io/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">my own DNS service</a>, not the default one provided by Amazon.</p>
+
+<p><em>Solution1:</em> Definining a static DNS server configuration</p>
+
+<p>In <code>/etc/network/interfaces</code> you can specify <strong>dns-search</strong> and <strong>dns-nameservers</strong> in the configuration of the network interface,</p>
+
+<pre><code># The primary network interface
+auto eth0
+iface eth0 inet dhcp
+        dns-search acme
+        dns-nameservers 1.2.3.4
+</code></pre>
+
+<p>Now if you apply this configuration with <code>/etc/init.d/networking restart</code>, you will be able to see changes in <code>/etc/resolv.conf</code>.</p>
+
+<p><em>Note1:</em> Restarting the network services didn&rsquo;t disconnect me from the computer I was configuring.</p>
+
+<p><em>Note2:</em> There may be better ways to apply changes in the network config.</p>
+
+<p><em>Problem2:</em> In /etc/resolv.conf there is my static configuration <strong>together with the DNS setup received via DHCP</strong>, and I want only my configuration without the one provided by DHCP.</p>
+
+<p><em>Solution2:</em> Avoid the DNS setup from DHCP.</p>
+
+<p>My system is using dhclient3, and the config. file for it is in <code>/etc/dhcp/dhclient.conf</code>. There, I comment the options to retrieve the DNS config from the DHCP service:</p>
+
+<pre><code>request subnet-mask, broadcast-address, time-offset, routers,
+        #domain-name, domain-name-servers, domain-search, host-name,
+        netbios-name-servers, netbios-scope, interface-mtu,
+        rfc3442-classless-static-routes, ntp-servers,
+</code></pre>
+
+<p>Now if I restart the <code>networking</code> service again, <code>/etc/resolv.conf</code> will have the right domain and nameservers.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Monitoring software]]></title>
     <link href="http://pfigue.github.io/blog/2013/09/21/monitoring-software/"/>
     <updated>2013-09-21T23:59:00+02:00</updated>
@@ -341,33 +381,6 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
 <p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
 
 <p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Hypnollama: heading to 1.0.0]]></title>
-    <link href="http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/"/>
-    <updated>2013-08-13T21:03:00+02:00</updated>
-    <id>http://pfigue.github.io/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0</id>
-    <content type="html"><![CDATA[<p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
-
-<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
-
-<p>The last changes are:</p>
-
-<ul>
-<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
-<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
-<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
-<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
-<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
-<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
-<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
-<li> I added some extra functional test, but a few more are needed.</li>
-</ul>
-
-
-<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
 ]]></content>
   </entry>
   

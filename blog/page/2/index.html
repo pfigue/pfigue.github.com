@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Some of the services that a webserver provides may be restricted to some specific people. There are two immediate ways to do this from the webserver &hellip;">
+  <meta name="description" content="Well, in the last week finally I could spend some hours working on Hypnollama. Since around 10 days I wanted to finish some tasks to be able to say &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,60 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/13/hypnollama-heading-to-1-dot-0-0/">Hypnollama: heading to 1.0.0</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-13T21:03:00+02:00" pubdate data-updated="true">Aug 13<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Well, in the last week finally I could spend some hours working on Hypnollama.</p>
+
+<p>Since around 10 days I wanted to finish some tasks to be able to say that Hypnollama can do something useful (for me).</p>
+
+<p>The last changes are:</p>
+
+<ul>
+<li> Moved from <em>httplib</em> to <em>urllib2</em>. Avoids a bug which was preventing me to test HTTPS addresses. I had to refactor the tests and I introduced a class hierarchy.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-new-test-to-check-for-content/">CheckInContent(url, expected_content)</a> to be sure an URL retrieves an exact text.</li>
+<li> <a href="http://pfigue.github.io/blog/2013/08/10/hypnollama-checking-for-401-unauthorized/">Unauthorized() test</a> for <strong>401 Unauthorized</strong> restriction in URLs</li>
+<li> <strong>Forbidden(url) test</strong>. If Unauthorized() checks for 401, this will check for <strong>403 Forbidden</strong>. I get this error when my IP is blocked in the webserver for an URL.</li>
+<li> <strong>CheckREInContent(url, expected_content) test</strong>. Fetches the content of an URL and makes sure a Regular Expression applies to it.</li>
+<li> Uses <a href="http://docopt.org/">docopt</a> for parsing the command line arguments. I really like it and recommend to take a look into it.</li>
+<li> Output similar to Nosetests. Time spent in testing, number of tests, etc. Only when the tests pass. When they fail, or when errors happen, the output is <em>my own</em>.</li>
+<li> I added some extra functional test, but a few more are needed.</li>
+</ul>
+
+
+<p>I would like to prepare a <strong>1.0.0 release</strong> soon.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -768,195 +822,6 @@ Referencing: 9 0 R, 1 0 R
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/02/02/analyzing-pdfs/">Analyzing PDFs</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-02-02T11:41:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
-
-<h2>Bank Transfer Order</h2>
-
-<p>An overview of the file:</p>
-
-<pre><code>PDFiD 0.0.12 /path/to/pdf-file
-PDF Header: %PDF-1.4
-obj                   16
-endobj                16
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  1
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
-</code></pre>
-
-<p>The first thing I saw is the header:</p>
-
-<pre><code>PDF Comment '%PDF-1.4\n'
-PDF Comment '%\xe2\xe3\xcf\xd3\n'
-</code></pre>
-
-<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
-
-<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
-
-<pre><code>obj 16 0
- Type: 
- Referencing: 
-  &lt;&lt;
-    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
-    /ModDate (D:201301dddddddd+dd'00')
-    /CreationDate (D:201301dddddddd+dd'00')
-  &gt;&gt;
- xref
- PDF Comment '%iText-5.3.2\n'
-</code></pre>
-
-<p>Obviously I replaced part of the dates.</p>
-
-<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
-
-<p>At the end of the file I find also:</p>
-
-<pre><code>trailer
-  &lt;&lt;
-    /Root 150R
-    /ID [&lt;32*x&gt;&lt;32*x&gt;]
-    /Info 160R
-    /Size 17
-   &gt;&gt;
-</code></pre>
-
-<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
-
-<p>There were no Javascript sections. No compression, no encryption.</p>
-
-<h2><em>Print to PDF</em> from Firefox</h2>
-
-<p>Overview of the file:</p>
-
-<pre><code>PDFiD 0.0.12 /path/to/pdf
-PDF Header: %PDF-1.5
-obj                   40
-endobj                40
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  4
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
-</code></pre>
-
-<p>Rendered with Cairo:</p>
-
-<pre><code>obj 39 0
- Type: 
- Referencing: 
-   &lt;&lt;
-     /Creator (cairo 1.9.5 (http:
-     / /cairographics.org))
-     /Producer (cairo 1.9.5 (http:
-     / /cairographics.org))
-   &gt;&gt;
-</code></pre>
-
-<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
-
-<p>Uses a more modern PDF version:</p>
-
-<pre><code>PDF Comment '%PDF-1.5\n'
-PDF Comment '%\xb5\xed\xae\xfb\n'
-</code></pre>
-
-<p>The trailer lacks IDs:</p>
-
-<pre><code>trailer
-  &lt;&lt;
-    /Size 41
-    /Root 400R
-    /Info 390R
-  &gt;&gt;
-</code></pre>
-
-<p>Again, no Javascript, no compression, no encryption.</p>
-
-<h2>Scans done with the fotocopy machine</h2>
-
-<p>The own signature of the machine:</p>
-
-<pre><code>obj 188 0
-  Type: 
-  Referencing: 
-  &lt;&lt;
-    /Creator (bizhub C35)
-    /Producer (bizhub C35)
-    /CreationDate (D:20120411180757+01'00')
-  &gt;&gt;
-</code></pre>
-
-<h2>Links</h2>
-
-<ul>
-<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
-<li><a href="http://itextpdf.com/">the iText library</a></li>
-<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -988,6 +853,10 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
       </li>
     
       <li class="post">
+        <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
       </li>
     
@@ -997,10 +866,6 @@ PDF Comment '%\xb5\xed\xae\xfb\n'
     
       <li class="post">
         <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/09/24/versioning-apis-do-or-dont/">Versioning APIs: do or don&#8217;t</a>
       </li>
     
   </ul>

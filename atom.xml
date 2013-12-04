@@ -4,7 +4,7 @@
   <title><![CDATA[pfigue]]></title>
   <link href="http://pfigue.github.io/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2013-12-03T17:46:21+01:00</updated>
+  <updated>2013-12-04T13:15:29+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -194,6 +194,46 @@ dnsmasq: /etc/hosts.acme server2.staging.acme is z.z.z.z
 <li><a href="http://en.wikipedia.org/wiki/Comparison_of_DNS_server_software">Comparison of DNS Server Software</a></li>
 </ul>
 
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Replacing DHCP automatic name resolution config with my own static one]]></title>
+    <link href="http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/"/>
+    <updated>2013-12-04T13:07:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one</id>
+    <content type="html"><![CDATA[<p><em>Problem1:</em> I have an AWS EC2 Instance (Ubuntu 12.04) where I want to use <a href="http://pfigue.github.io/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">my own DNS service</a>, not the default one provided by Amazon.</p>
+
+<p><em>Solution1:</em> Definining a static DNS server configuration</p>
+
+<p>In <code>/etc/network/interfaces</code> you can specify <strong>dns-search</strong> and <strong>dns-nameservers</strong> in the configuration of the network interface,</p>
+
+<pre><code># The primary network interface
+auto eth0
+iface eth0 inet dhcp
+        dns-search acme
+        dns-nameservers 1.2.3.4
+</code></pre>
+
+<p>Now if you apply this configuration with <code>/etc/init.d/networking restart</code>, you will be able to see changes in <code>/etc/resolv.conf</code>.</p>
+
+<p><em>Note1:</em> Restarting the network services didn&rsquo;t disconnect me from the computer I was configuring.</p>
+
+<p><em>Note2:</em> There may be better ways to apply changes in the network config.</p>
+
+<p><em>Problem2:</em> In /etc/resolv.conf there is my static configuration <strong>together with the DNS setup received via DHCP</strong>, and I want only my configuration without the one provided by DHCP.</p>
+
+<p><em>Solution2:</em> Avoid the DNS setup from DHCP.</p>
+
+<p>My system is using dhclient3, and the config. file for it is in <code>/etc/dhcp/dhclient.conf</code>. There, I comment the options to retrieve the DNS config from the DHCP service:</p>
+
+<pre><code>request subnet-mask, broadcast-address, time-offset, routers,
+        #domain-name, domain-name-servers, domain-search, host-name,
+        netbios-name-servers, netbios-scope, interface-mtu,
+        rfc3442-classless-static-routes, ntp-servers,
+</code></pre>
+
+<p>Now if I restart the <code>networking</code> service again, <code>/etc/resolv.conf</code> will have the right domain and nameservers.</p>
 ]]></content>
   </entry>
   
@@ -1184,168 +1224,6 @@ Referencing: 9 0 R, 1 0 R
 <p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
 
 <p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Analyzing PDFs]]></title>
-    <link href="http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs/"/>
-    <updated>2013-02-02T11:41:00+01:00</updated>
-    <id>http://pfigue.github.io/blog/2013/02/02/analyzing-pdfs</id>
-    <content type="html"><![CDATA[<p>I found several PDFs in my hard disk. With the <a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a> I am taking a look into the internals of these files.</p>
-
-<h2>Bank Transfer Order</h2>
-
-<p>An overview of the file:</p>
-
-<pre><code>PDFiD 0.0.12 /path/to/pdf-file
-PDF Header: %PDF-1.4
-obj                   16
-endobj                16
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  1
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
-</code></pre>
-
-<p>The first thing I saw is the header:</p>
-
-<pre><code>PDF Comment '%PDF-1.4\n'
-PDF Comment '%\xe2\xe3\xcf\xd3\n'
-</code></pre>
-
-<p>Those hexa. values \xe2\xe3\xcf\xd3 appear also in other PDFs (using different versions of the PDF spec.).</p>
-
-<p>We can see also that <a href="http://itextpdf.com/">the iText library</a> is used to render the PDF:</p>
-
-<pre><code>obj 16 0
- Type: 
- Referencing: 
-  &lt;&lt;
-    /Producer (iText&lt;AE&gt; 5.3.2 &lt;A9&gt;2000-2012 1T3XT BVBA \(AGPL-version\) \(AGPL-version\))
-    /ModDate (D:201301dddddddd+dd'00')
-    /CreationDate (D:201301dddddddd+dd'00')
-  &gt;&gt;
- xref
- PDF Comment '%iText-5.3.2\n'
-</code></pre>
-
-<p>Obviously I replaced part of the dates.</p>
-
-<p>The /Font objects are <em>Helvetica</em> and <em>Helvetica-Bold</em>, both with <em>WinAnsiEncoding</em>, though some of the files i analyzed were in German.</p>
-
-<p>At the end of the file I find also:</p>
-
-<pre><code>trailer
-  &lt;&lt;
-    /Root 150R
-    /ID [&lt;32*x&gt;&lt;32*x&gt;]
-    /Info 160R
-    /Size 17
-   &gt;&gt;
-</code></pre>
-
-<p>32*x are two different sequences of 32 hexadecimal digits each. In other documents, some sections have also IDs</p>
-
-<p>There were no Javascript sections. No compression, no encryption.</p>
-
-<h2><em>Print to PDF</em> from Firefox</h2>
-
-<p>Overview of the file:</p>
-
-<pre><code>PDFiD 0.0.12 /path/to/pdf
-PDF Header: %PDF-1.5
-obj                   40
-endobj                40
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  4
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            0
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
-</code></pre>
-
-<p>Rendered with Cairo:</p>
-
-<pre><code>obj 39 0
- Type: 
- Referencing: 
-   &lt;&lt;
-     /Creator (cairo 1.9.5 (http:
-     / /cairographics.org))
-     /Producer (cairo 1.9.5 (http:
-     / /cairographics.org))
-   &gt;&gt;
-</code></pre>
-
-<p>Cairo 1.9.5 was <a href="http://www.cairographics.org/news/">released between October 2009 and February 2010</a>.</p>
-
-<p>Uses a more modern PDF version:</p>
-
-<pre><code>PDF Comment '%PDF-1.5\n'
-PDF Comment '%\xb5\xed\xae\xfb\n'
-</code></pre>
-
-<p>The trailer lacks IDs:</p>
-
-<pre><code>trailer
-  &lt;&lt;
-    /Size 41
-    /Root 400R
-    /Info 390R
-  &gt;&gt;
-</code></pre>
-
-<p>Again, no Javascript, no compression, no encryption.</p>
-
-<h2>Scans done with the fotocopy machine</h2>
-
-<p>The own signature of the machine:</p>
-
-<pre><code>obj 188 0
-  Type: 
-  Referencing: 
-  &lt;&lt;
-    /Creator (bizhub C35)
-    /Producer (bizhub C35)
-    /CreationDate (D:20120411180757+01'00')
-  &gt;&gt;
-</code></pre>
-
-<h2>Links</h2>
-
-<ul>
-<li><a href="http://blog.didierstevens.com/programs/pdf-tools/">pdf-parser and pdfid of Didier Stevens</a></li>
-<li><a href="http://itextpdf.com/">the iText library</a></li>
-<li><a href="http://www.cairographics.org/">Cairo Graphics</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

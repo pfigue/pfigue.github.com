@@ -4,7 +4,7 @@
   <title><![CDATA[Category: dns | pfigue]]></title>
   <link href="http://pfigue.github.io/blog/categories/dns/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2013-12-03T17:46:21+01:00</updated>
+  <updated>2013-12-04T13:15:29+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -194,6 +194,46 @@ dnsmasq: /etc/hosts.acme server2.staging.acme is z.z.z.z
 <li><a href="http://en.wikipedia.org/wiki/Comparison_of_DNS_server_software">Comparison of DNS Server Software</a></li>
 </ul>
 
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Replacing DHCP automatic name resolution config with my own static one]]></title>
+    <link href="http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/"/>
+    <updated>2013-12-04T13:07:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one</id>
+    <content type="html"><![CDATA[<p><em>Problem1:</em> I have an AWS EC2 Instance (Ubuntu 12.04) where I want to use <a href="http://pfigue.github.io/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">my own DNS service</a>, not the default one provided by Amazon.</p>
+
+<p><em>Solution1:</em> Definining a static DNS server configuration</p>
+
+<p>In <code>/etc/network/interfaces</code> you can specify <strong>dns-search</strong> and <strong>dns-nameservers</strong> in the configuration of the network interface,</p>
+
+<pre><code># The primary network interface
+auto eth0
+iface eth0 inet dhcp
+        dns-search acme
+        dns-nameservers 1.2.3.4
+</code></pre>
+
+<p>Now if you apply this configuration with <code>/etc/init.d/networking restart</code>, you will be able to see changes in <code>/etc/resolv.conf</code>.</p>
+
+<p><em>Note1:</em> Restarting the network services didn&rsquo;t disconnect me from the computer I was configuring.</p>
+
+<p><em>Note2:</em> There may be better ways to apply changes in the network config.</p>
+
+<p><em>Problem2:</em> In /etc/resolv.conf there is my static configuration <strong>together with the DNS setup received via DHCP</strong>, and I want only my configuration without the one provided by DHCP.</p>
+
+<p><em>Solution2:</em> Avoid the DNS setup from DHCP.</p>
+
+<p>My system is using dhclient3, and the config. file for it is in <code>/etc/dhcp/dhclient.conf</code>. There, I comment the options to retrieve the DNS config from the DHCP service:</p>
+
+<pre><code>request subnet-mask, broadcast-address, time-offset, routers,
+        #domain-name, domain-name-servers, domain-search, host-name,
+        netbios-name-servers, netbios-scope, interface-mtu,
+        rfc3442-classless-static-routes, ntp-servers,
+</code></pre>
+
+<p>Now if I restart the <code>networking</code> service again, <code>/etc/resolv.conf</code> will have the right domain and nameservers.</p>
 ]]></content>
   </entry>
   

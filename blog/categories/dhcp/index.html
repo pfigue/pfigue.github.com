@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Versioning APIs: do or don't - pfigue</title>
+  <title>Category: dhcp - pfigue</title>
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Today I visited REST Beyond the Intro Level, where Stefan Tilkov explained several concepts regarding REST APIs. Among other things he mentioned NOT &hellip;">
+  <meta name="description" content="Category: dhcp">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/">
+  <link rel="canonical" href="http://pfigue.github.ioblog/categories/dhcp/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -76,126 +76,36 @@
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">Versioning APIs: do or don't</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-09-24T00:27:00+02:00" pubdate data-updated="true">Sep 24<span>th</span>, 2013</time>
-        
-      </p>
+    <h1 class="entry-title">Category: dhcp</h1>
     
   </header>
-
-
-<div class="entry-content"><p>Today I visited <a href="https://secure.trifork.com/berlin-2013/freeevent/index.jsp?eventOID=5783">REST Beyond the Intro Level</a>, where <a href="http://www.innoq.com/blog/st/">Stefan Tilkov</a> explained several concepts regarding REST APIs.</p>
-
-<p>Among other things he mentioned NOT to version APIs, and he took as argument the <a href="http://en.wikipedia.org/wiki/Robustness_principle">Postel&rsquo;s Law</a>:</p>
-
-<pre><code>Be conservative in what you send, be liberal in what you accept
-</code></pre>
-
-<p>Keep your API always backwards compatible. Keep te same behaviour for your ressources, and if you can&rsquo;t keep it, create new ressources.</p>
-
-<p>His idea is that the part of the system serving the API should be <em>conservative</em>, and should avoid <em>semantic jumps</em> when developers deploy new features. At the same time, the consumers of the API should be tolerant when they use it.</p>
-
-<h2>Stefan, I disagree</h2>
-
-<p>If Stefan has a point when he says that an API is always the same and it has the same essential behaviour (e.g. behind the <a href="https://dev.twitter.com/docs/api">Twitter REST API</a> is the same idea, independently of the version: essentially, provide access to read and post tweets.), personally I don&rsquo;t agree with him too much.</p>
-
-<p>I think an API evolves a lot during its life and needs proper versioning. At least, the non-backwards compatible changes should be identified.</p>
-
-<p>In a mature API, well designed, well and long tested, maybe there are no big changes. But in a <strong>new API, built for a not-very-well defined product, change is the constant, and non-backwards-compatible changes happen</strong>.</p>
-
-<p>Also there could be plenty of different clients for an API, each of them programmed for a different version and expecting an specific behaviour. They will break if we don&rsquo;t serve different versions of the API.</p>
-
-<ul>
-<li>One alternative is put the version number in the URL, like <a href="http://api.v1.foo.bar/,">http://api.v1.foo.bar/,</a> or <a href="http://api.foo.bar/v1/">http://api.foo.bar/v1/</a></li>
-<li>Another alternative (I like it more) it passing an argument with the version, like <a href="http://api.foo.bar/?v=1,">http://api.foo.bar/?v=1,</a> and default to the last stable version if no version number is provided.</li>
-</ul>
-
-
-<p>My work experience is <em>startup</em>, and there you don&rsquo;t know always which product are you developing. Decissions change often quite fast and you can&rsquo;t design for the long-term. Maybe if I had work in a more stable environment I had a different opinion and could easily agree with Stefan.</p>
-
-<h2>Semantic Versioning</h2>
-
-<p><a href="http://semver.org/">Semantic Versioning</a> is a nice schema to start: Major version number for uncompatible changes, Minor version for new features and Patch number for bugfixes.</p>
-</div>
-
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
-
-      
-
-
-
-
-
+  <div id="blog-archives" class="category">
 
 
 
   
+  <h2>2013</h2>
+
+<article>
+  
+<h1><a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a></h1>
+<time datetime="2013-12-04T13:07:00+01:00" pubdate><span class='month'>Dec</span> <span class='day'>04</span> <span class='year'>2013</span></time>
+
+<footer>
+  <span class="categories">posted in <a class='category' href='/blog/categories/dhcp/'>dhcp</a>, <a class='category' href='/blog/categories/dns/'>dns</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>, <a class='category' href='/blog/categories/ubuntu/'>ubuntu</a></span>
+</footer>
 
 
-<time datetime="2013-09-24T00:27:00+02:00" pubdate data-updated="true">Sep 24<span>th</span>, 2013</time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/api/'>api</a>, <a class='category' href='/blog/categories/release-management/'>release-management</a>, <a class='category' href='/blog/categories/rest/'>rest</a>
-  
-</span>
-
-
-    </p>
-    
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/" >Tweet</a>
-  
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-</div>
-
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2013/09/21/monitoring-software/" title="Previous Post: Monitoring software">&laquo; Monitoring software</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/" title="Next Post: How to add custom facts to Facter">How to add custom facts to Facter &raquo;</a>
-      
-    </p>
-  </footer>
 </article>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-  </section>
+
+  
+</article>
 
 </div>
 
@@ -277,10 +187,7 @@
       var disqus_shortname = 'pfigue';
       
         
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/';
-        var disqus_url = 'http://pfigue.github.io/blog/2013/09/24/versioning-apis-do-or-dont/';
-        var disqus_script = 'embed.js';
+        var disqus_script = 'count.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
