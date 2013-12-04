@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ubuntu | pfigue]]></title>
   <link href="http://pfigue.github.io/blog/categories/ubuntu/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2013-12-04T13:15:29+01:00</updated>
+  <updated>2013-12-04T13:22:47+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -50,6 +50,14 @@ iface eth0 inet dhcp
 </code></pre>
 
 <p>Now if I restart the <code>networking</code> service again, <code>/etc/resolv.conf</code> will have the right domain and nameservers.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://ubuntuforums.org/showthread.php?t=1320773">Static DNS with DHCP</a></li>
+<li><a href="https://help.ubuntu.com/12.04/serverguide/network-configuration.html#name-resolution">Ubuntu 12.04: Network Configuration: Name Resolution</a></li>
+</ul>
+
 ]]></content>
   </entry>
   
