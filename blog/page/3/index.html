@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="I found several PDFs in my hard disk. With the pdf-parser and pdfid of Didier Stevens I am taking a look into the internals of these files. Bank &hellip;">
+  <meta name="description" content="Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start mining my own coins. The &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,169 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/01/installing-cgminer-on-ubuntu/">Installing cgminer on Ubuntu</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-01T02:30:00+01:00" pubdate data-updated="true">Mar 1<span>st</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start <a href="http://mining.bitcoin.cz/">mining my own coins</a>.</p>
+
+<p>The program I chose was <a href="https://github.com/ckolivas/cgminer">cgminer</a> between those options for people who has <a href="https://en.bitcoin.it/wiki/Cpu_Miner">no GPU</a>.</p>
+
+<p><a href="https://github.com/ckolivas/cgminer">Cgminer</a> can work with CPU, with GPU or with both at the same time.</p>
+
+<h2>Instaling requirements</h2>
+
+<pre><code>apt-get install git autoconf libtool libcurl4-openssl-dev libncurses5-dev pkg-config yasm make
+</code></pre>
+
+<p>These are the program needed to compiler the tool and make it run.</p>
+
+<h2>Installing cgminer itself</h2>
+
+<p>First, become root. Then clone the GitHub repo, prepare the compilation and finally compile it:</p>
+
+<pre><code>$ sudo su
+# cd /opt/
+# git clone git://github.com/ckolivas/cgminer.git
+# cd cgminer/
+# ./autogen.sh --disable-opencl --disable-adl --enable-cpumining
+# CFLAGS="-O2 -Wall -march=native" ./configure --disable-opencl --disable-adl --enable-cpumining 
+# make -j8
+</code></pre>
+
+<p>If you have an GPU and you achieved to make it run, you may want to not disable neither OpenCL nor ADL.</p>
+
+<h2>Testing if it works</h2>
+
+<p>In the same directory <em>/opt/cgminer/</em>:</p>
+
+<pre><code># ./cgminer --benchmark
+</code></pre>
+
+<p>You shouldn&rsquo;t get errors, but see the speed of your CPU(s).</p>
+
+<h2>Launching it for real</h2>
+
+<p>Once you get credentials for a worker in a <a href="https://en.bitcoin.it/wiki/Pooled_mining">mining pool</a>, you can do:</p>
+
+<pre><code># ./cgminer -o http://worker.url.info/ -u worker-user -p worker-password
+</code></pre>
+
+<p>I use a <em>screen</em> or <em>tmux</em> session to keep it running even if I close the terminal, and at the moment I should say that I am getting already some BTCs :)</p>
+
+<p>If you want to continue testing BitCoin, for example transfering coins, you can use one of my addresses as a recipient: <strong>1GnquejgaLW7haKgtzdgUzYwRxPeF2cPEK</strong>. I will be very happy.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/">Analysing PDFs: a little of OpenAction</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-02T13:21:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
+
+<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
+PDF Header: %PDF-1.4
+obj                   28
+endobj                28
+stream                10
+endstream             10
+xref                   1
+trailer                1
+startxref              1
+/Page                  2
+/Encrypt               0
+/ObjStm                0
+/JS                    0
+/JavaScript            0
+/AA                    0
+/OpenAction            1
+/AcroForm              0
+/JBIG2Decode           0
+/RichMedia             0
+/Launch                0
+/EmbeddedFile          0
+/Colors &gt; 2^24         0
+</code></pre>
+
+<p>It seems to be complicated, though it is just 2 pages long.</p>
+
+<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
+
+<pre><code>obj 27 0
+Type: /Catalog
+Referencing: 9 0 R, 1 0 R
+  &lt;&lt;
+    /Type /Catalog
+    /Pages 9 0 R
+    /OpenAction [1 0 R /XYZ null null 0]
+    /Lang (de-DE)
+  &gt;&gt;
+</code></pre>
+
+<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
+
+<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
+
+<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -683,6 +846,14 @@ $ bundle install
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
       </li>
     
@@ -692,14 +863,6 @@ $ bundle install
     
       <li class="post">
         <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
       </li>
     
   </ul>
@@ -732,7 +895,7 @@ $ bundle install
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - pfigue -
+  Copyright &copy; 2014 - pfigue -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

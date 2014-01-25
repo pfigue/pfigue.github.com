@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Well, in the last week finally I could spend some hours working on Hypnollama. Since around 10 days I wanted to finish some tasks to be able to say &hellip;">
+  <meta name="description" content="This morning we had a problem at work. Our django webapp was raising an UnicodeError exception because it was trying to access a file, whose filename &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,186 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
+
+<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
+
+<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
+
+<p>Till here, everything is right. Then, why is it not working?</p>
+
+<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
+
+<pre><code>$ locale-gen de_DE.UTF-8
+</code></pre>
+
+<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
+
+<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
+
+<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
+
+<h2>Setting the right locale for the command line</h2>
+
+<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
+
+<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
+
+<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/">Running Django administrative commands as cronjobs</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-14T18:17:00+02:00" pubdate data-updated="true">Aug 14<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>My best practices (at the moment) to install periodic django administrative commands.</p>
+
+<h1>Crontabs</h1>
+
+<p>First of all, there are three crontabs:</p>
+
+<ul>
+<li> the system one (<em>/etc/crontab</em>)</li>
+<li> and the user&rsquo;s one (<em>/var/spool/cron/crontabs/root</em>, e.g.).</li>
+<li> those in <em>/etc/cron.d/</em>. Newly installed packages may want to install their cronjobs there.</li>
+</ul>
+
+
+<p>The syntax is different:</p>
+
+<ul>
+<li> in the system crontab (and /etc/cron.d) you indicate which user runs the cronjob.</li>
+<li> while in the user&rsquo;s cronjob it is the user itself who runs the cronjobs.</li>
+</ul>
+
+
+<p>And the way to manipulate the files as well:</p>
+
+<ul>
+<li> system crontab is manipulated editing directly <em>/etc/crontab</em> or <em>/etc/cron.d/file</em>. Usually it is a script (like a <em>postinstall script</em> in a package) who updates it.</li>
+<li><p> user&rsquo;s crontab is manipulated via the <code>crontab</code> command:</p>
+
+<ul>
+<li><code>crontab -e</code> to edit. <code>export EDITOR=/usr/bin/vim</code> may help, unles you like <em>nano</em>.</li>
+<li>and <code>crontab -l</code> to list (piping to <em>less</em>, for example).</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Note that the command <strong>checks the syntax of the crontab</strong>.</p>
+
+<p>Where to put the cronjobs is up to you. In my case we were using the system crontab but we switched to root&rsquo;s crontab, as we were introducing the cronjobs manually and would like to have a syntax check, just in case.</p>
+
+<h1>Wrapping for manage.py</h1>
+
+<p>To make <strong>manage.py</strong> run you need to provide some <strong>environment variables</strong>. Some of them to activate the virtual environment of your python webapp, others maybe to provide configuration parameters for your webapp (database server, port, credentials, etc.). Also, the python interpreter you should use is the one in your virtualenv. Maybe a wrapper like this in <code>/root/tools/django_cronjobs_wrapper.sh</code> becomes handy:</p>
+
+<pre><code>#!/bin/bash
+# Wrapper to run cronjobs
+
+if [ $# -eq 0 ]; then
+    echo "usage: $0 {command for manage.py}"
+    exit 1
+fi
+
+export SETTINGS_FILE='/etc/acme/webapp_settings.conf'
+export PYTHONPATH='/opt/acme/webapp_env/'
+export PYTHONHOME='/opt/acme/webapp_env'
+$PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
+</code></pre>
+
+<p>The return value is the one of the manage.py command (useful for cron to know if it failed). <em>Stderr</em> and <em>stdout</em> are not redirected anywhere at the moment.</p>
+
+<p>Indeed, you can extend this wrapper to run <strong>manage.py commands</strong> in the shell, for example a <strong>shell_plus session</strong>, or run a <strong>celery consumer</strong> from <em>Upstart</em> or <em>Supervisor</em>.</p>
+
+<p>Note: I had to change the group of the file to <em>crontab</em> and give it exec. permission:</p>
+
+<pre><code>-rwxr-xr-- 1 root crontab 1055 Aug 7 18:00 tools/django_cronjobs_wrapper.sh
+</code></pre>
+
+<h1>Installing the cronjob</h1>
+
+<p>For example:</p>
+
+<pre><code>5 * * * * /root/tools/django_cronjobs_wrapper.sh a_csv_export --for --example &gt;&gt; /var/log/acme/cronjobs/a_csv_export.log
+</code></pre>
+
+<p>This would be for a user&rsquo;s crontab. Note that <strong>stdout</strong> goes to a logfile, appending lines, so you will have logs for all the executions (but be careful with the log size!)</p>
+
+<p><strong>stderr</strong> is captured by cron, who will send an email if there were messages.</p>
+
+<p>In case the django command (and all the stuff behind) is properly programmed you will get only emails when there are errors during the cronjob execution (e.g. lack of disk space while writing the CSV file, which will trigger an IOError exception).</p>
+
+<h1>Having a collection of cronjobs</h1>
+
+<p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
+
+<p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -659,169 +839,6 @@ def test_eggplants_search():
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/01/installing-cgminer-on-ubuntu/">Installing cgminer on Ubuntu</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-01T02:30:00+01:00" pubdate data-updated="true">Mar 1<span>st</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start <a href="http://mining.bitcoin.cz/">mining my own coins</a>.</p>
-
-<p>The program I chose was <a href="https://github.com/ckolivas/cgminer">cgminer</a> between those options for people who has <a href="https://en.bitcoin.it/wiki/Cpu_Miner">no GPU</a>.</p>
-
-<p><a href="https://github.com/ckolivas/cgminer">Cgminer</a> can work with CPU, with GPU or with both at the same time.</p>
-
-<h2>Instaling requirements</h2>
-
-<pre><code>apt-get install git autoconf libtool libcurl4-openssl-dev libncurses5-dev pkg-config yasm make
-</code></pre>
-
-<p>These are the program needed to compiler the tool and make it run.</p>
-
-<h2>Installing cgminer itself</h2>
-
-<p>First, become root. Then clone the GitHub repo, prepare the compilation and finally compile it:</p>
-
-<pre><code>$ sudo su
-# cd /opt/
-# git clone git://github.com/ckolivas/cgminer.git
-# cd cgminer/
-# ./autogen.sh --disable-opencl --disable-adl --enable-cpumining
-# CFLAGS="-O2 -Wall -march=native" ./configure --disable-opencl --disable-adl --enable-cpumining 
-# make -j8
-</code></pre>
-
-<p>If you have an GPU and you achieved to make it run, you may want to not disable neither OpenCL nor ADL.</p>
-
-<h2>Testing if it works</h2>
-
-<p>In the same directory <em>/opt/cgminer/</em>:</p>
-
-<pre><code># ./cgminer --benchmark
-</code></pre>
-
-<p>You shouldn&rsquo;t get errors, but see the speed of your CPU(s).</p>
-
-<h2>Launching it for real</h2>
-
-<p>Once you get credentials for a worker in a <a href="https://en.bitcoin.it/wiki/Pooled_mining">mining pool</a>, you can do:</p>
-
-<pre><code># ./cgminer -o http://worker.url.info/ -u worker-user -p worker-password
-</code></pre>
-
-<p>I use a <em>screen</em> or <em>tmux</em> session to keep it running even if I close the terminal, and at the moment I should say that I am getting already some BTCs :)</p>
-
-<p>If you want to continue testing BitCoin, for example transfering coins, you can use one of my addresses as a recipient: <strong>1GnquejgaLW7haKgtzdgUzYwRxPeF2cPEK</strong>. I will be very happy.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/02/02/analysing-pdfs-a-little-of-openaction/">Analysing PDFs: a little of OpenAction</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-02-02T13:21:00+01:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>At work we have a PDF form that we can print and fulfill to ask for holidays. Analysing it&hellip;</p>
-
-<pre><code>PDFiD 0.0.12 /tmp/Formular - Urlaub.pdf
-PDF Header: %PDF-1.4
-obj                   28
-endobj                28
-stream                10
-endstream             10
-xref                   1
-trailer                1
-startxref              1
-/Page                  2
-/Encrypt               0
-/ObjStm                0
-/JS                    0
-/JavaScript            0
-/AA                    0
-/OpenAction            1
-/AcroForm              0
-/JBIG2Decode           0
-/RichMedia             0
-/Launch                0
-/EmbeddedFile          0
-/Colors &gt; 2^24         0
-</code></pre>
-
-<p>It seems to be complicated, though it is just 2 pages long.</p>
-
-<p>I was surprised by the /OpenAction section. Actually it is just a parameter in the Catalog of the file:</p>
-
-<pre><code>obj 27 0
-Type: /Catalog
-Referencing: 9 0 R, 1 0 R
-  &lt;&lt;
-    /Type /Catalog
-    /Pages 9 0 R
-    /OpenAction [1 0 R /XYZ null null 0]
-    /Lang (de-DE)
-  &gt;&gt;
-</code></pre>
-
-<p>In the table 8.2 (section 8.2.1) of the <a href="http://partners.adobe.com/public/developer/en/pdf/PDFReference16.pdf">PDF Reference 1.6</a> it says, that OpenAction will be <em>executed</em> once the file is opened to jump to the page object <em>1 0 R</em> and rendering it in the coordinates (left=0, top=0) with no zoom.</p>
-
-<p>In the section 8.5 there is a complete description of other OpenActions that may be useful to play sounds, movies, execute commands and more interesting stuff.</p>
-
-<p>At the moment, i don&rsquo;t know what kind of restriction put the PDF file readers there.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -849,6 +866,14 @@ Referencing: 9 0 R, 1 0 R
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
       </li>
     
@@ -858,14 +883,6 @@ Referencing: 9 0 R, 1 0 R
     
       <li class="post">
         <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
       </li>
     
   </ul>
@@ -898,7 +915,7 @@ Referencing: 9 0 R, 1 0 R
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - pfigue -
+  Copyright &copy; 2014 - pfigue -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

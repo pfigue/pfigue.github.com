@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Using Vagrant with LXC Linux Containers - pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="Containers LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Using Vagrant with LXC Linux Containers</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-25T15:44:00+01:00" pubdate data-updated="true">Jan 25<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Containers</h2>
+
+<p>LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in Linux they appeared around 5 years ago, afaik.</p>
+
+<p>The point of virtualizing using containers instead of virtual machines is that, both, guest and host, use the same instance of the kernel, which translates in <strong>far less time to boot and far less resources used</strong>.</p>
+
+<p>A container is just a set of resources and processes running in a different namespace, eventually with some limitations (CPU or I/O usage, memory used, etc.).</p>
+
+<p>Afair, there are/were 2 implementations of containers for linux: OpenVZ and LXC. Without being an expert in the area, I&rsquo;d say that LXC has much better maintenance nowadays than OpenVZ.</p>
+
+<h2>LXC Containers in Ubuntu</h2>
+
+<p>In Ubuntu 12.04 we can install LXC as usual with <code>sudo apt-get install lxc</code>. As root, we can list the containers we have in every state with <code>sudo lxc-list</code>.</p>
+
+<p>Usually, <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">once <strong>lxc</strong> is installed, we should find a new network bridge</a>: <em>lxcbr0</em>. You can check if it is present with:</p>
+
+<pre><code>$ ifconfig lxcbr0 2&gt; /dev/null 1&gt;&amp;2  &amp;&amp; echo 'lxc interface is present' || echo 'no lxc interface'
+lxc interface is present
+$
+</code></pre>
+
+<p>Before start to use containers with Vagrant, we should <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">work around a bug in sudo (Ubuntu 12.04)</a>.</p>
+
+<p>With <code>sudo visudo</code> you can add the line:</p>
+
+<pre><code>Defaults        !tty_tickets
+</code></pre>
+
+<p>to the sudoers file. It will solve the bug.</p>
+
+<h2>Vagrant with the LXC provider</h2>
+
+<p>Let&rsquo;s create a new vagrant project:</p>
+
+<pre><code>$ mkdir vagrant-lxc
+$ cd vagrant-lxc/
+$ vagrant init test-lxc http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box
+</code></pre>
+
+<p>Where the URL is an <a href="http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box">Ubuntu 12.04 amd64 box <strong>for LXC</strong></a> from <a href="http://vagrantbox.es/">vagrantbox.es</a>.</p>
+
+<p>You can use the same <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">Vagrantfile I used in the previous article</a>, but notice that the <code>config.vm.network</code> parameter is ignored by this provider.
+At the moment you can only forward port, but not bridge any interface.</p>
+
+<p>Now you can <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">install there the <strong>vagrant-lxc</strong> plugin</a> with <code>vagrant plugin install vagrant-lxc</code>.</p>
+
+<p>Once done you should already be able to fire up that box with LXC:</p>
+
+<pre><code>$ vagrant up --provider=lxc
+[default] Warning! The LXC provider doesn't support any of the Vagrant public / private
+network configurations (ex: `config.vm.network :private_network, ip: "some-ip"`).
+They will be silently ignored.
+</code></pre>
+
+<p><code>vagrant ssh</code> from the same <code>vagrant-lxc/</code> directory to check it, or <code>sudo lxc-list</code> or <code>lxc-ps --lxc</code> to visualice the running containers.</p>
+
+<h2>Advantages</h2>
+
+<p>The time needed to boot up a Vagrant box with LXC is really much lower than using VirtualBox. This translates in faster try-error loop, faster feedback and <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster development of Puppet Manifest, server configuration</a>, <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster testing of packages</a>, etc.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">LXC &ndash; lxcbr0</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">README for vagrant-lxc plugin</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">vagrant-lxc &ndash; BUG &ndash; Avoiding &lsquo;sudo&rsquo; passwords</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a></li>
+<li> <a href="http://fabiorehm.com/blog/2013/04/28/lxc-provider-for-vagrant/">LXC provider for Vagrant</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-25T15:44:00+01:00" pubdate data-updated="true">Jan 25<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/devops/'>devops</a>, <a class='category' href='/blog/categories/lxc/'>lxc</a>, <a class='category' href='/blog/categories/vagrant/'>vagrant</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/25/my-first-steps-with-vagrant/" title="Previous Post: My first steps with Vagrant">&laquo; My first steps with Vagrant</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/';
+        var disqus_url = 'http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

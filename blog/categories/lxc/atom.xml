@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: lxc | pfigue]]></title>
+  <link href="http://pfigue.github.io/blog/categories/lxc/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.io/"/>
+  <updated>2014-01-25T17:00:00+01:00</updated>
+  <id>http://pfigue.github.io/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Using Vagrant with LXC Linux Containers]]></title>
+    <link href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/"/>
+    <updated>2014-01-25T15:44:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers</id>
+    <content type="html"><![CDATA[<h2>Containers</h2>
+
+<p>LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in Linux they appeared around 5 years ago, afaik.</p>
+
+<p>The point of virtualizing using containers instead of virtual machines is that, both, guest and host, use the same instance of the kernel, which translates in <strong>far less time to boot and far less resources used</strong>.</p>
+
+<p>A container is just a set of resources and processes running in a different namespace, eventually with some limitations (CPU or I/O usage, memory used, etc.).</p>
+
+<p>Afair, there are/were 2 implementations of containers for linux: OpenVZ and LXC. Without being an expert in the area, I&rsquo;d say that LXC has much better maintenance nowadays than OpenVZ.</p>
+
+<h2>LXC Containers in Ubuntu</h2>
+
+<p>In Ubuntu 12.04 we can install LXC as usual with <code>sudo apt-get install lxc</code>. As root, we can list the containers we have in every state with <code>sudo lxc-list</code>.</p>
+
+<p>Usually, <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">once <strong>lxc</strong> is installed, we should find a new network bridge</a>: <em>lxcbr0</em>. You can check if it is present with:</p>
+
+<pre><code>$ ifconfig lxcbr0 2&gt; /dev/null 1&gt;&amp;2  &amp;&amp; echo 'lxc interface is present' || echo 'no lxc interface'
+lxc interface is present
+$
+</code></pre>
+
+<p>Before start to use containers with Vagrant, we should <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">work around a bug in sudo (Ubuntu 12.04)</a>.</p>
+
+<p>With <code>sudo visudo</code> you can add the line:</p>
+
+<pre><code>Defaults        !tty_tickets
+</code></pre>
+
+<p>to the sudoers file. It will solve the bug.</p>
+
+<h2>Vagrant with the LXC provider</h2>
+
+<p>Let&rsquo;s create a new vagrant project:</p>
+
+<pre><code>$ mkdir vagrant-lxc
+$ cd vagrant-lxc/
+$ vagrant init test-lxc http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box
+</code></pre>
+
+<p>Where the URL is an <a href="http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box">Ubuntu 12.04 amd64 box <strong>for LXC</strong></a> from <a href="http://vagrantbox.es/">vagrantbox.es</a>.</p>
+
+<p>You can use the same <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">Vagrantfile I used in the previous article</a>, but notice that the <code>config.vm.network</code> parameter is ignored by this provider.
+At the moment you can only forward port, but not bridge any interface.</p>
+
+<p>Now you can <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">install there the <strong>vagrant-lxc</strong> plugin</a> with <code>vagrant plugin install vagrant-lxc</code>.</p>
+
+<p>Once done you should already be able to fire up that box with LXC:</p>
+
+<pre><code>$ vagrant up --provider=lxc
+[default] Warning! The LXC provider doesn't support any of the Vagrant public / private
+network configurations (ex: `config.vm.network :private_network, ip: "some-ip"`).
+They will be silently ignored.
+</code></pre>
+
+<p><code>vagrant ssh</code> from the same <code>vagrant-lxc/</code> directory to check it, or <code>sudo lxc-list</code> or <code>lxc-ps --lxc</code> to visualice the running containers.</p>
+
+<h2>Advantages</h2>
+
+<p>The time needed to boot up a Vagrant box with LXC is really much lower than using VirtualBox. This translates in faster try-error loop, faster feedback and <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster development of Puppet Manifest, server configuration</a>, <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster testing of packages</a>, etc.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">LXC &ndash; lxcbr0</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">README for vagrant-lxc plugin</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">vagrant-lxc &ndash; BUG &ndash; Avoiding &lsquo;sudo&rsquo; passwords</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a></li>
+<li> <a href="http://fabiorehm.com/blog/2013/04/28/lxc-provider-for-vagrant/">LXC provider for Vagrant</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Why a name server and why dnsmasq. I have a datacenter (Acme GmbH.), with several environments (green, blue, live, staging), each environment with &hellip;">
+  <meta name="description" content="Containers LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,268 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-25T15:44:00+01:00" pubdate data-updated="true">Jan 25<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Containers</h2>
+
+<p>LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in Linux they appeared around 5 years ago, afaik.</p>
+
+<p>The point of virtualizing using containers instead of virtual machines is that, both, guest and host, use the same instance of the kernel, which translates in <strong>far less time to boot and far less resources used</strong>.</p>
+
+<p>A container is just a set of resources and processes running in a different namespace, eventually with some limitations (CPU or I/O usage, memory used, etc.).</p>
+
+<p>Afair, there are/were 2 implementations of containers for linux: OpenVZ and LXC. Without being an expert in the area, I&rsquo;d say that LXC has much better maintenance nowadays than OpenVZ.</p>
+
+<h2>LXC Containers in Ubuntu</h2>
+
+<p>In Ubuntu 12.04 we can install LXC as usual with <code>sudo apt-get install lxc</code>. As root, we can list the containers we have in every state with <code>sudo lxc-list</code>.</p>
+
+<p>Usually, <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">once <strong>lxc</strong> is installed, we should find a new network bridge</a>: <em>lxcbr0</em>. You can check if it is present with:</p>
+
+<pre><code>$ ifconfig lxcbr0 2&gt; /dev/null 1&gt;&amp;2  &amp;&amp; echo 'lxc interface is present' || echo 'no lxc interface'
+lxc interface is present
+$
+</code></pre>
+
+<p>Before start to use containers with Vagrant, we should <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">work around a bug in sudo (Ubuntu 12.04)</a>.</p>
+
+<p>With <code>sudo visudo</code> you can add the line:</p>
+
+<pre><code>Defaults        !tty_tickets
+</code></pre>
+
+<p>to the sudoers file. It will solve the bug.</p>
+
+<h2>Vagrant with the LXC provider</h2>
+
+<p>Let&rsquo;s create a new vagrant project:</p>
+
+<pre><code>$ mkdir vagrant-lxc
+$ cd vagrant-lxc/
+$ vagrant init test-lxc http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box
+</code></pre>
+
+<p>Where the URL is an <a href="http://dl.dropbox.com/u/13510779/lxc-precise-amd64-2013-07-12.box">Ubuntu 12.04 amd64 box <strong>for LXC</strong></a> from <a href="http://vagrantbox.es/">vagrantbox.es</a>.</p>
+
+<p>You can use the same <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">Vagrantfile I used in the previous article</a>, but notice that the <code>config.vm.network</code> parameter is ignored by this provider.
+At the moment you can only forward port, but not bridge any interface.</p>
+
+<p>Now you can <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">install there the <strong>vagrant-lxc</strong> plugin</a> with <code>vagrant plugin install vagrant-lxc</code>.</p>
+
+<p>Once done you should already be able to fire up that box with LXC:</p>
+
+<pre><code>$ vagrant up --provider=lxc
+[default] Warning! The LXC provider doesn't support any of the Vagrant public / private
+network configurations (ex: `config.vm.network :private_network, ip: "some-ip"`).
+They will be silently ignored.
+</code></pre>
+
+<p><code>vagrant ssh</code> from the same <code>vagrant-lxc/</code> directory to check it, or <code>sudo lxc-list</code> or <code>lxc-ps --lxc</code> to visualice the running containers.</p>
+
+<h2>Advantages</h2>
+
+<p>The time needed to boot up a Vagrant box with LXC is really much lower than using VirtualBox. This translates in faster try-error loop, faster feedback and <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster development of Puppet Manifest, server configuration</a>, <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">faster testing of packages</a>, etc.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="https://help.ubuntu.com/lts/serverguide/lxc.html#lxcbr0">LXC &ndash; lxcbr0</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/blob/master/README.md">README for vagrant-lxc plugin</a></li>
+<li> <a href="https://github.com/fgrehm/vagrant-lxc/wiki/Avoiding-%27sudo%27-passwords">vagrant-lxc &ndash; BUG &ndash; Avoiding &lsquo;sudo&rsquo; passwords</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a></li>
+<li> <a href="http://fabiorehm.com/blog/2013/04/28/lxc-provider-for-vagrant/">LXC provider for Vagrant</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-25T12:52:00+01:00" pubdate data-updated="true">Jan 25<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Why Vagrant?</h2>
+
+<p>Lately I was developing my-own-solution &trade; for package deployment and now I&rsquo;d to check if I can install system packages without problems.</p>
+
+<p><strong>Vagrant is a tool that lets me create, destroy and recreate Virtual Machines very easily</strong>, so I can in less than 5 minutes, create a new VM with a fresh install of Ubuntu 12.04 and install there the package I want to test.</p>
+
+<p>It can also be useful to test system configuration (e.g. Puppet manifests or Chef recipes, nginx config., etc.) without playing with the production environment.</p>
+
+<p>Another interesting use (and the reason I want to add Vagrant to the development toolchain my team uses at work) is to provide every developer with the option of packing his/her branch and deploy it with the help of Vagrant into a fresh VM, locally on his/her laptop.</p>
+
+<p>Once deployed there, unit and functional test could be run in/against that VM, to be sure that every single branch sent to staging passed a minimal set of requirements.</p>
+
+<h2>Replacing the old-Ubuntu-12.04 Vagrant install with a factory Vagrant.</h2>
+
+<p>Long time ago I installed <strong>vagrant</strong> via <code>sudo apt-get install vagrant</code>, and since then I was getting an error whenever I tried to start a new project:</p>
+
+<pre><code>$ vagrant init test1 http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box
+/home/pablo/.rvm/rubies/ruby-2.0.0-p353/lib/ruby/site_ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require': cannot load such file -- log4r (LoadError)
+        from /home/pablo/.rvm/rubies/ruby-2.0.0-p353/lib/ruby/site_ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require'
+        from /usr/bin/vagrant:2:in `&lt;main&gt;'
+</code></pre>
+
+<p>I decided to remove the version of Vagrant shipped with Ubuntu 12.04, and install a new one from <a href="http://www.vagrantup.com/downloads.html">the debian package I could get via HashiCorp</a>:</p>
+
+<pre><code>$ sudo apt-get remove --purge vagrant
+$ wget "https://dl.bintray.com/mitchellh/vagrant/vagrant_1.4.3_x86_64.deb"
+$ sudo dpkg -i vagrant_1.4.3_x86_64.deb
+</code></pre>
+
+<p>Due to the first installation of Vagrant, probably all the dependencies were already satisfied and I didn&rsquo;t have to install anything else.</p>
+
+<h2>First project</h2>
+
+<p>In Vagrant, you create a new directory for every project. In that directory will live a <code>Vagrantfile</code> with all the configuration of the VM(s) for that project.</p>
+
+<pre><code>$ mkdir vagrant
+$ cd vagrant/
+$ vagrant init test1 http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box
+A `Vagrantfile` has been placed in this directory. You are now
+ready to `vagrant up` your first virtual environment! Please read
+the comments in the Vagrantfile as well as documentation on
+`vagrantup.com` for more information on using Vagrant.
+</code></pre>
+
+<p>If you are going to use Vagrant as a testing/deployment solution at work, you may find interesting to track the Vagrantfile via a <em>git</em> repository.</p>
+
+<p>Let&rsquo;s edit the Vagrantfile a little bit to redirect the port 8080 on my laptop to the port 8000 in the test1 VM. The result would look like:</p>
+
+<pre><code># Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "test1"
+  config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box"
+  config.vm.network :forwarded_port, guest: 8000, host: 8080
+end
+</code></pre>
+
+<p>The URL <a href="http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box">http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box</a> is a boxed <a href="http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box">Ubuntu 12.04 amd64 (for VirtualBox)</a> that I found in <a href="http://www.vagantbox.es">vagrantbox.es</a>.</p>
+
+<p>Once the file is edited and saved, if now I run <code>vagrant up</code>, as it is the first time I fire that VM up, it will fetch the .box file (around 400M big) and create the VM.</p>
+
+<p>Per default, the virtualization <em>provider</em> is VirtualBox, but I&rsquo;ve seen boxes for VMWare and for Linux Containers (LXC).</p>
+
+<h2>Testing the port redirect</h2>
+
+<p>Typing <code>vagrant ssh</code> in the shell inside the <code>vagrant/</code> directory will establish an SSH session with the VM.</p>
+
+<p>Once there you can type this to get netcat listening on port 8000 of the VM:</p>
+
+<pre><code>$ nc -l 0.0.0.0 8000
+</code></pre>
+
+<p>In other terminal you can try to access the port 8080 of your computer (the host of the VM), like:</p>
+
+<pre><code>$ curl http://127.0.0.1:8080
+</code></pre>
+
+<p>It should redirect the packets from 8080/tcp in the host to 8000/tcp in the VM, and you should be able to see the HTTP request in the terminal where netcat is running.</p>
+
+<h2>Trying a network bridge instead of a port redirect</h2>
+
+<p>If the VM will need to access a computer in the same network as the host (e.g. a database server), or the VM will be accessed by a computer different than the host (e.g. a <a href="http://code.google.com/p/selenium/wiki/Grid2">Selenium Grid</a>), you may find easier to install a network bridge better than redirect some ports.</p>
+
+<p>With that purpose in mind, the Vagrantfile should be something like:</p>
+
+<pre><code># Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "test1"
+  config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/precise/current/precise-server-cloudimg-amd64-vagrant-disk1.box"
+  config.vm.network :public_network
+end
+</code></pre>
+
+<p>The new Vagrant configuration can be applied with <code>vagrant reload</code>. That command will stop (in a polite and slow way) and start again the VMs, asking this time the user in the command-line for which network interface will be the VM bridged to.</p>
+
+<p>Once the VM is completelly booted, from a <code>vagrant ssh</code> session, the available interfaces can be checked:</p>
+
+<pre><code>$ ifconfig -a | perl -ne 'print "$1\n" if m/^(\S+)/'
+eth0
+eth1
+lo
+$ ifconfig eth1 | grep inet\ addr
+          inet addr:192.168.0.105  Bcast:192.168.0.255  Mask:255.255.255.0
+</code></pre>
+
+<p>So, my VM got the IP address 192.168.0.105. If I start a netcat in port 90/tcp with <code>sudo nc -l 0.0.0.0 90</code></p>
+
+<p>Then, I should be able to connect to port 90/tcp of the VM from my laptop, with something like <code>telnet 192.168.0.105 90</code>.</p>
+
+<p>Once you stop playing with Vagrant, you can stop the VM via <code>vagrant halt</code>.</p>
+
+<p>References:</p>
+
+<ul>
+<li><p> <a href="http://www.jedi.be/blog/2011/03/28/using-vagrant-as-a-team/">Using Vagrant as a Team &ndash; Just Enough Developed Infrastructure</a></p></li>
+<li><p> <a href="http://www.vagrantbox.es/">A list of base boxes for Vagrant</a></p></li>
+<li><p> <a href="http://www.vagrantup.com/downloads.html">Vagrant Packages and Tarballs</a></p></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -916,186 +1178,6 @@ rm -rf $TMP_DIR
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/15/adjusting-the-locale-settings/">Adjusting the locale settings</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-15T15:48:00+02:00" pubdate data-updated="true">Aug 15<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This morning we had a problem at work. Our django webapp was raising an <strong>UnicodeError</strong> exception because it was trying to access a file, whose filename was written with ciryllic characters.</p>
-
-<p>The behaviour of python with unicode depends on the system locale, which is defined by <em>environment variables</em> like <strong>LC_ALL</strong>, <strong>LANG</strong>, <strong>LC_TYPE</strong>, etc.</p>
-
-<p>In this case, the solution of the problem was first, to use a locale with <strong>UTF-8</strong>. But actually, the Upstart task that launches the <em>uwsgi</em> for the django app is providing several environment variables. Among others, <em>LC_ALL</em> and <em>LANG</em>, which refer to <em>de_DE.UTF-8</em> locale.</p>
-
-<p>Till here, everything is right. Then, why is it not working?</p>
-
-<p>Well, because the locale needs to be installed. Or more exactly, it needs to be generated:</p>
-
-<pre><code>$ locale-gen de_DE.UTF-8
-</code></pre>
-
-<p>Apparently, <code>dpkg-reconfigure locales</code> checks for the locales and compiles them if necesary. For some yet-unknown-for-me reason, that locale was not being compiled by <em>dpkg-reconfigure</em> till I ran <em>locale-gen</em>.</p>
-
-<p>Once this locales was compiled we didn&rsquo;t even need to restart the uwsgis to fix the application, though we did, just in case.</p>
-
-<p><em>UnicodeError</em> went away and we won a karma cookie for the happy DevOps Team.</p>
-
-<h2>Setting the right locale for the command line</h2>
-
-<p>One thing is the locale for the django app, defined in the environment variables the python interpreter gets to run the uwsgi (i.e. defined in the Upstart task).</p>
-
-<p>And other thing is the command line the operators use to do their stuff on the system. This one should be in English, or operators will break. To achieve this, <strong>LANG=en_US.UTF-8</strong>, for example. And the right way is to define it in <code>/etc/environment</code>. I defined also <strong>LC_ALL</strong> with the same value.</p>
-
-<p>Now when running <code>dpkg-reconfigure locales</code> I don&rsquo;t get anymore the warnings I was getting before due to the lack of <em>LANG</em> and <em>LC_ALL</em> definition.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/14/running-django-administrative-commands-as-cronjobs/">Running Django administrative commands as cronjobs</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-14T18:17:00+02:00" pubdate data-updated="true">Aug 14<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>My best practices (at the moment) to install periodic django administrative commands.</p>
-
-<h1>Crontabs</h1>
-
-<p>First of all, there are three crontabs:</p>
-
-<ul>
-<li> the system one (<em>/etc/crontab</em>)</li>
-<li> and the user&rsquo;s one (<em>/var/spool/cron/crontabs/root</em>, e.g.).</li>
-<li> those in <em>/etc/cron.d/</em>. Newly installed packages may want to install their cronjobs there.</li>
-</ul>
-
-
-<p>The syntax is different:</p>
-
-<ul>
-<li> in the system crontab (and /etc/cron.d) you indicate which user runs the cronjob.</li>
-<li> while in the user&rsquo;s cronjob it is the user itself who runs the cronjobs.</li>
-</ul>
-
-
-<p>And the way to manipulate the files as well:</p>
-
-<ul>
-<li> system crontab is manipulated editing directly <em>/etc/crontab</em> or <em>/etc/cron.d/file</em>. Usually it is a script (like a <em>postinstall script</em> in a package) who updates it.</li>
-<li><p> user&rsquo;s crontab is manipulated via the <code>crontab</code> command:</p>
-
-<ul>
-<li><code>crontab -e</code> to edit. <code>export EDITOR=/usr/bin/vim</code> may help, unles you like <em>nano</em>.</li>
-<li>and <code>crontab -l</code> to list (piping to <em>less</em>, for example).</li>
-</ul>
-</li>
-</ul>
-
-
-<p>Note that the command <strong>checks the syntax of the crontab</strong>.</p>
-
-<p>Where to put the cronjobs is up to you. In my case we were using the system crontab but we switched to root&rsquo;s crontab, as we were introducing the cronjobs manually and would like to have a syntax check, just in case.</p>
-
-<h1>Wrapping for manage.py</h1>
-
-<p>To make <strong>manage.py</strong> run you need to provide some <strong>environment variables</strong>. Some of them to activate the virtual environment of your python webapp, others maybe to provide configuration parameters for your webapp (database server, port, credentials, etc.). Also, the python interpreter you should use is the one in your virtualenv. Maybe a wrapper like this in <code>/root/tools/django_cronjobs_wrapper.sh</code> becomes handy:</p>
-
-<pre><code>#!/bin/bash
-# Wrapper to run cronjobs
-
-if [ $# -eq 0 ]; then
-    echo "usage: $0 {command for manage.py}"
-    exit 1
-fi
-
-export SETTINGS_FILE='/etc/acme/webapp_settings.conf'
-export PYTHONPATH='/opt/acme/webapp_env/'
-export PYTHONHOME='/opt/acme/webapp_env'
-$PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
-</code></pre>
-
-<p>The return value is the one of the manage.py command (useful for cron to know if it failed). <em>Stderr</em> and <em>stdout</em> are not redirected anywhere at the moment.</p>
-
-<p>Indeed, you can extend this wrapper to run <strong>manage.py commands</strong> in the shell, for example a <strong>shell_plus session</strong>, or run a <strong>celery consumer</strong> from <em>Upstart</em> or <em>Supervisor</em>.</p>
-
-<p>Note: I had to change the group of the file to <em>crontab</em> and give it exec. permission:</p>
-
-<pre><code>-rwxr-xr-- 1 root crontab 1055 Aug 7 18:00 tools/django_cronjobs_wrapper.sh
-</code></pre>
-
-<h1>Installing the cronjob</h1>
-
-<p>For example:</p>
-
-<pre><code>5 * * * * /root/tools/django_cronjobs_wrapper.sh a_csv_export --for --example &gt;&gt; /var/log/acme/cronjobs/a_csv_export.log
-</code></pre>
-
-<p>This would be for a user&rsquo;s crontab. Note that <strong>stdout</strong> goes to a logfile, appending lines, so you will have logs for all the executions (but be careful with the log size!)</p>
-
-<p><strong>stderr</strong> is captured by cron, who will send an email if there were messages.</p>
-
-<p>In case the django command (and all the stuff behind) is properly programmed you will get only emails when there are errors during the cronjob execution (e.g. lack of disk space while writing the CSV file, which will trigger an IOError exception).</p>
-
-<h1>Having a collection of cronjobs</h1>
-
-<p>You may want to keep the crontabs in a repo. Or in a <strong>chef recipe</strong>. Or deploy them in a package (if you deploy the rest of your software with packages).</p>
-
-<p>Some other peopler prefer to use Celery Periodic Tasks, which means that the periodic tasks are configured in the software, instead of using the system configuration.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1121,6 +1203,14 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
       </li>
     
@@ -1130,14 +1220,6 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
     
       <li class="post">
         <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/28/a-custom-facter-fact-to-read-aws-user-data/">A custom Facter fact to read AWS User-Data</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/27/how-to-add-custom-facts-to-facter/">How to add custom facts to Facter</a>
       </li>
     
   </ul>
@@ -1170,7 +1252,7 @@ $PYTHONHOME/bin/python /opt/acme/webapp/code/manage.py $*
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - pfigue -
+  Copyright &copy; 2014 - pfigue -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
