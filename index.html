@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Containers LXC Containers are a relatively new way of virtualization for Linux environments. Solaris had containers since several years ago, but in &hellip;">
+  <meta name="description" content="Lintian is a tool to check the format of Debian Packages. It is useful when you are building your own packages, to check if they are properly built &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,87 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-04T09:56:00+01:00" pubdate data-updated="true">Feb 4<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Lintian is a tool to check the format of Debian Packages.</p>
+
+<p>It is useful when you are building your own packages, to check if they are properly built before testing them by actually installing them (for example, <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">through Vagrant into fresh containers</a>).</p>
+
+<p>It can use different profiles, with different checks. The default profile is <strong>debian/main</strong>, which is useful if you pretend to package a program for the official Debian repositories.</p>
+
+<p>After installing <strong>Lintian</strong> with <code>sudo apt-get install lintian</code> in Ubuntu 12.04, I have a file <code>/usr/share/lintian/profiles/debian/main.profile</code>. That is the definition of the <em>debian/main</em> profile (or just <em>debian</em>).</p>
+
+<p>Lintian looks for profiles in this order,</p>
+
+<ul>
+<li> first in the user&rsquo;s domain <code>$HOME/.lintian/profiles/</code></li>
+<li> then in system&rsquo;s domain <code>/etc/lintian/profiles</code></li>
+<li> and finally in <code>/ur/share/lintian/profiles</code>.</li>
+</ul>
+
+
+<p>So, what I did is creating a new profile, (filename ended in <em>.profile</em>):</p>
+
+<pre><code>$ mkdir -p /home/pfigue/.lintian/acme_gmbh/my_cute_profile/
+$ vim /home/pfigue/.lintian/acme_gmbh/my_cute_profile/main.profile
+</code></pre>
+
+<p>There, the content of the profile file in my case is:</p>
+
+<pre><code>Profile: acme_gmbh/main
+Extends: debian/main
+Disable-Tags: dir-or-file-in-opt
+</code></pre>
+
+<p>Which actually inherits all the rules from debian/main, and disables the check to avoid installation in <code>/opt/</code> (dir-or-file-in-opt). That path is reserved for private software, not for Debian software, that&rsquo;s the reason why the Debian profile checks nothing is installed there.</p>
+
+<p>Once the new profile is in place, you can check it with:</p>
+
+<pre><code>$ lintian --profile acme_gmbh  /tmp/testapp_0.45_amd64.deb
+</code></pre>
+
+<p>Per default the profile <em>acme_gmbh</em> is an alias for <em>acme_gmbh/main</em>.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="http://lintian.debian.org/manual/section-2.5.html">Lintian User&rsquo;s Manual: Vendor Profiles</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1060,124 +1141,6 @@ x86_64
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-08-19T19:16:00+02:00" pubdate data-updated="true">Aug 19<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>A external designer prepares some static pages as landing pages for a platform.</p>
-
-<ul>
-<li>They are stored in a github repository.</li>
-<li>We should provide a comfortable way of deploying them to production.</li>
-<li>Obviously, the external desginer is not allowed to access the production environment.</li>
-</ul>
-
-
-<p>Solution:</p>
-
-<ul>
-<li>we will provide github access to the repository, so the desginer will push/pull directly to github the change she does.</li>
-<li>we will write a deployment script to fetch the last changes from github and put them in production</li>
-</ul>
-
-
-<h2>The deployment script</h2>
-
-<p>Something very easy in shell script: fetch the last changes, clean the filetree and copy it to production</p>
-
-<pre><code>#!/bin/bash
-
-GIT_COPY=/opt/acme/repo-static-pages/
-TARGET=/usr/share/nginx/www/
-TMP_DIR=/tmp/repo-static-pages/
-
-
-### Update local copy
-pushd $GIT_COPY &gt; /dev/null
-git fetch upstream
-git checkout master
-git pull upstream master
-popd &gt; /dev/null
-
-### Put to a temporary location and clean it
-rm -rf $TMP_DIR
-mkdir -p $TMP_DIR
-cp -r $GIT_COPY* $TMP_DIR
-find $TMP_DIR -iname ".git" -type d -exec rm -rf {} \;
-find $TMP_DIR -iname "*.tar.gz" -type f -delete
-find $TMP_DIR -iname "*.tar" -type f -delete
-
-### Deploy
-rm -rf $TARGET
-mkdir $TARGET
-cp -r $TMP_DIR* $TARGET
-
-rm -rf $TMP_DIR 
-</code></pre>
-
-<p>Note that it will deploy the <em>master</em> branch.</p>
-
-<p>Also, we have to prepare the environment:</p>
-
-<ul>
-<li>Create SSH keys that will be used as <strong>deployment keys</strong> for the repository: <code>ssh-keygen -t rsa</code>
-
-<ul>
-<li> Without password to be able to automatise the process.</li>
-<li> Or with password and store the unencrypted key in an SSH keyring.</li>
-</ul>
-</li>
-<li><code>mkdir -p /opt/acme/repo-static-pages/</code></li>
-<li><code>git clone git@github.com:acme/repo-static-pages.git /opt/acme/repo-static-pages/</code></li>
-<li><code>git remote add upstream git@github.com:acme/repo-static-pages.git</code></li>
-</ul>
-
-
-<p>Note that the <em>upstream</em> should use the SSH endpoint instead the HTTPS one, to be able to authentify via the <em>deployment key</em>.</p>
-
-<h2>Deploying</h2>
-
-<p>Alternatives:</p>
-
-<ul>
-<li>deploy manually on demand, but I would prefer to spend the time in something more interesting</li>
-<li>Install a cronjob that weekly, daily or every 5 minutes will deploy the last changes in github.</li>
-<li>Use a githook that will run the deployment when a Pull Request is merged into the master branch of the repo.</li>
-</ul>
-
-
-<p>In any case, we have to be sure that no several deployments are running concurrently.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1203,6 +1166,10 @@ rm -rf $TMP_DIR
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
       </li>
     
@@ -1216,10 +1183,6 @@ rm -rf $TMP_DIR
     
       <li class="post">
         <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
       </li>
     
   </ul>

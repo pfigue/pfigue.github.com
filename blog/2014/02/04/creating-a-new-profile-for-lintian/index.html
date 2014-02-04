@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Creating a new profile for Lintian - pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="Lintian is a tool to check the format of Debian Packages. It is useful when you are building your own packages, to check if they are properly built &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Creating a new profile for Lintian</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-04T09:56:00+01:00" pubdate data-updated="true">Feb 4<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Lintian is a tool to check the format of Debian Packages.</p>
+
+<p>It is useful when you are building your own packages, to check if they are properly built before testing them by actually installing them (for example, <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">through Vagrant into fresh containers</a>).</p>
+
+<p>It can use different profiles, with different checks. The default profile is <strong>debian/main</strong>, which is useful if you pretend to package a program for the official Debian repositories.</p>
+
+<p>After installing <strong>Lintian</strong> with <code>sudo apt-get install lintian</code> in Ubuntu 12.04, I have a file <code>/usr/share/lintian/profiles/debian/main.profile</code>. That is the definition of the <em>debian/main</em> profile (or just <em>debian</em>).</p>
+
+<p>Lintian looks for profiles in this order,</p>
+
+<ul>
+<li> first in the user&rsquo;s domain <code>$HOME/.lintian/profiles/</code></li>
+<li> then in system&rsquo;s domain <code>/etc/lintian/profiles</code></li>
+<li> and finally in <code>/ur/share/lintian/profiles</code>.</li>
+</ul>
+
+
+<p>So, what I did is creating a new profile, (filename ended in <em>.profile</em>):</p>
+
+<pre><code>$ mkdir -p /home/pfigue/.lintian/acme_gmbh/my_cute_profile/
+$ vim /home/pfigue/.lintian/acme_gmbh/my_cute_profile/main.profile
+</code></pre>
+
+<p>There, the content of the profile file in my case is:</p>
+
+<pre><code>Profile: acme_gmbh/main
+Extends: debian/main
+Disable-Tags: dir-or-file-in-opt
+</code></pre>
+
+<p>Which actually inherits all the rules from debian/main, and disables the check to avoid installation in <code>/opt/</code> (dir-or-file-in-opt). That path is reserved for private software, not for Debian software, that&rsquo;s the reason why the Debian profile checks nothing is installed there.</p>
+
+<p>Once the new profile is in place, you can check it with:</p>
+
+<pre><code>$ lintian --profile acme_gmbh  /tmp/testapp_0.45_amd64.deb
+</code></pre>
+
+<p>Per default the profile <em>acme_gmbh</em> is an alias for <em>acme_gmbh/main</em>.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="http://lintian.debian.org/manual/section-2.5.html">Lintian User&rsquo;s Manual: Vendor Profiles</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-04T09:56:00+01:00" pubdate data-updated="true">Feb 4<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/debian/'>debian</a>, <a class='category' href='/blog/categories/packages/'>packages</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/" data-via="__pfigue" data-counturl="http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/" title="Previous Post: Using Vagrant with LXC Linux Containers">&laquo; Using Vagrant with LXC Linux Containers</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.io" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.io/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.io/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/06/configuring-dnsmasq-to-serve-my-own-domain-name-zone/">Configuring dnsmasq to serve my own domain name zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/';
+        var disqus_url = 'http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

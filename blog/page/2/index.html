@@ -9,7 +9,8 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="This morning we had a problem at work. Our django webapp was raising an UnicodeError exception because it was trying to access a file, whose filename &hellip;">
+  <meta name="description" content="A external designer prepares some static pages as landing pages for a platform. They are stored in a github repository.
+We should provide a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +78,124 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/19/deploying-static-pages/">Deploying static pages</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-19T19:16:00+02:00" pubdate data-updated="true">Aug 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>A external designer prepares some static pages as landing pages for a platform.</p>
+
+<ul>
+<li>They are stored in a github repository.</li>
+<li>We should provide a comfortable way of deploying them to production.</li>
+<li>Obviously, the external desginer is not allowed to access the production environment.</li>
+</ul>
+
+
+<p>Solution:</p>
+
+<ul>
+<li>we will provide github access to the repository, so the desginer will push/pull directly to github the change she does.</li>
+<li>we will write a deployment script to fetch the last changes from github and put them in production</li>
+</ul>
+
+
+<h2>The deployment script</h2>
+
+<p>Something very easy in shell script: fetch the last changes, clean the filetree and copy it to production</p>
+
+<pre><code>#!/bin/bash
+
+GIT_COPY=/opt/acme/repo-static-pages/
+TARGET=/usr/share/nginx/www/
+TMP_DIR=/tmp/repo-static-pages/
+
+
+### Update local copy
+pushd $GIT_COPY &gt; /dev/null
+git fetch upstream
+git checkout master
+git pull upstream master
+popd &gt; /dev/null
+
+### Put to a temporary location and clean it
+rm -rf $TMP_DIR
+mkdir -p $TMP_DIR
+cp -r $GIT_COPY* $TMP_DIR
+find $TMP_DIR -iname ".git" -type d -exec rm -rf {} \;
+find $TMP_DIR -iname "*.tar.gz" -type f -delete
+find $TMP_DIR -iname "*.tar" -type f -delete
+
+### Deploy
+rm -rf $TARGET
+mkdir $TARGET
+cp -r $TMP_DIR* $TARGET
+
+rm -rf $TMP_DIR 
+</code></pre>
+
+<p>Note that it will deploy the <em>master</em> branch.</p>
+
+<p>Also, we have to prepare the environment:</p>
+
+<ul>
+<li>Create SSH keys that will be used as <strong>deployment keys</strong> for the repository: <code>ssh-keygen -t rsa</code>
+
+<ul>
+<li> Without password to be able to automatise the process.</li>
+<li> Or with password and store the unencrypted key in an SSH keyring.</li>
+</ul>
+</li>
+<li><code>mkdir -p /opt/acme/repo-static-pages/</code></li>
+<li><code>git clone git@github.com:acme/repo-static-pages.git /opt/acme/repo-static-pages/</code></li>
+<li><code>git remote add upstream git@github.com:acme/repo-static-pages.git</code></li>
+</ul>
+
+
+<p>Note that the <em>upstream</em> should use the SSH endpoint instead the HTTPS one, to be able to authentify via the <em>deployment key</em>.</p>
+
+<h2>Deploying</h2>
+
+<p>Alternatives:</p>
+
+<ul>
+<li>deploy manually on demand, but I would prefer to spend the time in something more interesting</li>
+<li>Install a cronjob that weekly, daily or every 5 minutes will deploy the last changes in github.</li>
+<li>Use a githook that will run the deployment when a Pull Request is merged into the master branch of the repo.</li>
+</ul>
+
+
+<p>In any case, we have to be sure that no several deployments are running concurrently.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -772,73 +891,6 @@ EOF
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/07/testing-my-webapp-api-with-nose/">Testing my django webapp API with nose</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-07T21:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
-
-<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
-</code></pre>
-
-<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
-
-<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
-
-<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
-
-<pre><code>from werkzeug.test import Client
-from werkzeug.wrappers import BaseResponse
-from legumes.wsgi import application as app
-
-def test_eggplants_search():
-    c = Client(app, BaseResponse)
-    resp = c.get('/eggplants/search/?color=red')
-    assert( resp.status_code==200 and len(resp.data)&gt;0 )
-</code></pre>
-
-<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
-
-<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
-
-<p>References:</p>
-
-<ul>
-<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
-<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; Older</a>
@@ -866,6 +918,10 @@ def test_eggplants_search():
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
       </li>
     
@@ -879,10 +935,6 @@ def test_eggplants_search():
     
       <li class="post">
         <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
       </li>
     
   </ul>

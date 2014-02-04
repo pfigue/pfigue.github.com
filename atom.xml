@@ -4,7 +4,7 @@
   <title><![CDATA[pfigue]]></title>
   <link href="http://pfigue.github.io/atom.xml" rel="self"/>
   <link href="http://pfigue.github.io/"/>
-  <updated>2014-01-25T17:00:00+01:00</updated>
+  <updated>2014-02-04T10:11:51+01:00</updated>
   <id>http://pfigue.github.io/</id>
   <author>
     <name><![CDATA[pfigue]]></name>
@@ -12,6 +12,60 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Creating a new profile for Lintian]]></title>
+    <link href="http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian/"/>
+    <updated>2014-02-04T09:56:00+01:00</updated>
+    <id>http://pfigue.github.io/blog/2014/02/04/creating-a-new-profile-for-lintian</id>
+    <content type="html"><![CDATA[<p>Lintian is a tool to check the format of Debian Packages.</p>
+
+<p>It is useful when you are building your own packages, to check if they are properly built before testing them by actually installing them (for example, <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">through Vagrant into fresh containers</a>).</p>
+
+<p>It can use different profiles, with different checks. The default profile is <strong>debian/main</strong>, which is useful if you pretend to package a program for the official Debian repositories.</p>
+
+<p>After installing <strong>Lintian</strong> with <code>sudo apt-get install lintian</code> in Ubuntu 12.04, I have a file <code>/usr/share/lintian/profiles/debian/main.profile</code>. That is the definition of the <em>debian/main</em> profile (or just <em>debian</em>).</p>
+
+<p>Lintian looks for profiles in this order,</p>
+
+<ul>
+<li> first in the user&rsquo;s domain <code>$HOME/.lintian/profiles/</code></li>
+<li> then in system&rsquo;s domain <code>/etc/lintian/profiles</code></li>
+<li> and finally in <code>/ur/share/lintian/profiles</code>.</li>
+</ul>
+
+
+<p>So, what I did is creating a new profile, (filename ended in <em>.profile</em>):</p>
+
+<pre><code>$ mkdir -p /home/pfigue/.lintian/acme_gmbh/my_cute_profile/
+$ vim /home/pfigue/.lintian/acme_gmbh/my_cute_profile/main.profile
+</code></pre>
+
+<p>There, the content of the profile file in my case is:</p>
+
+<pre><code>Profile: acme_gmbh/main
+Extends: debian/main
+Disable-Tags: dir-or-file-in-opt
+</code></pre>
+
+<p>Which actually inherits all the rules from debian/main, and disables the check to avoid installation in <code>/opt/</code> (dir-or-file-in-opt). That path is reserved for private software, not for Debian software, that&rsquo;s the reason why the Debian profile checks nothing is installed there.</p>
+
+<p>Once the new profile is in place, you can check it with:</p>
+
+<pre><code>$ lintian --profile acme_gmbh  /tmp/testapp_0.45_amd64.deb
+</code></pre>
+
+<p>Per default the profile <em>acme_gmbh</em> is an alias for <em>acme_gmbh/main</em>.</p>
+
+<p>References:</p>
+
+<ul>
+<li> <a href="http://lintian.debian.org/manual/section-2.5.html">Lintian User&rsquo;s Manual: Vendor Profiles</a></li>
+<li> <a href="http://pfigue.github.io/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using Vagrant with LXC Linux Containers]]></title>
@@ -1289,46 +1343,6 @@ EOF
 
 <ul>
 <li><a href="http://read-the-docs.readthedocs.org/en/latest/install.html">http://read-the-docs.readthedocs.org/en/latest/install.html</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Testing my django webapp API with nose]]></title>
-    <link href="http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose/"/>
-    <updated>2013-03-07T21:24:00+01:00</updated>
-    <id>http://pfigue.github.io/blog/2013/03/07/testing-my-webapp-api-with-nose</id>
-    <content type="html"><![CDATA[<p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
-
-<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
-</code></pre>
-
-<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
-
-<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
-
-<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
-
-<pre><code>from werkzeug.test import Client
-from werkzeug.wrappers import BaseResponse
-from legumes.wsgi import application as app
-
-def test_eggplants_search():
-    c = Client(app, BaseResponse)
-    resp = c.get('/eggplants/search/?color=red')
-    assert( resp.status_code==200 and len(resp.data)&gt;0 )
-</code></pre>
-
-<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
-
-<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
-
-<p>References:</p>
-
-<ul>
-<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
-<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
 </ul>
 
 ]]></content>

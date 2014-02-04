@@ -9,7 +9,7 @@
   <meta name="author" content="pfigue">
 
   
-  <meta name="description" content="Since I know BitCoin I was being more and more curious about it. Today during some spare time I had I decided to start mining my own coins. The &hellip;">
+  <meta name="description" content="I have a django webapp with a view /eggplants/search/. I want to test that view automatically with nose as part of a test suite, for example, I will &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,73 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/07/testing-my-webapp-api-with-nose/">Testing my django webapp API with nose</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T21:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I have a django webapp with a view <em>/eggplants/search/</em>. I want to test that view automatically with <strong>nose</strong> as part of a test suite, for example, I will run:</p>
+
+<pre><code>legumes/ $ DJANGO_SETTINGS_MODULE='legumes.settings' nosetests eggplants.tests
+</code></pre>
+
+<p>and it will execute tests for the views of the module <em>eggplants</em> in the project <em>legumes</em>. Those tests will ask the API, so it needs a server providing the API.</p>
+
+<p><a href="http://werkzeug.pocoo.org/docs/test/"><strong>Werkzeug</strong> provides some help</a> to achieve this in an easy way. The idea is, instead of starting a webserver and make HTTP requests, it will just forward the requests using the WSGI protocol to the webapp. Everything in the same instance, without spawning a webserver. This is ideal for services like Travis.</p>
+
+<p>In <em>legumes/eggplants/test.py</em> I could have something like:</p>
+
+<pre><code>from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse
+from legumes.wsgi import application as app
+
+def test_eggplants_search():
+    c = Client(app, BaseResponse)
+    resp = c.get('/eggplants/search/?color=red')
+    assert( resp.status_code==200 and len(resp.data)&gt;0 )
+</code></pre>
+
+<p>This will do a GET request to <em>/eggplants/search/?color=red</em> and check for the answer length and code.</p>
+
+<p><em>legumes/legumes/wsgi.py</em>  is <a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">created when you run the <em>startproject</em> command</a> in Django.</p>
+
+<p>References:</p>
+
+<ul>
+<li><a href="http://werkzeug.pocoo.org/docs/test/">Werkzeug: Test Utilities</a></li>
+<li><a href="https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/">How to deploy with WSGI</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -846,6 +913,10 @@ $ bundle install
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
       </li>
     
@@ -859,10 +930,6 @@ $ bundle install
     
       <li class="post">
         <a href="/blog/2013/12/04/replacing-dhcp-automatic-name-resolution-config-with-my-own-static-one/">Replacing DHCP automatic name resolution config with my own static one</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/11/29/a-puppet-manifest-to-set-the-timezone/">A Puppet Manifest to set the timezone</a>
       </li>
     
   </ul>
