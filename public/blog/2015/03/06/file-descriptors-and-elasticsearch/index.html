@@ -1,0 +1,467 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>File Descriptors and ElasticSearch - pfigue</title>
+  <meta name="author" content="pfigue">
+
+  
+  <meta name="description" content="ElasticSearch consumes an high number of file descriptors. It is quite easy to break an ES cluster by having a low number of available
+file &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="pfigue" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-38745757-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:pfigue.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/pfigue/">About me</a></li>
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/categories/talk">Talks</a></li>
+  <li><a href="/blog/categories/note">Notes</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">File Descriptors and ElasticSearch</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-06T16:07:00+01:00" pubdate data-updated="true">Mar 6<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>ElasticSearch consumes an high number of file descriptors.</h1>
+
+<p>It is quite easy to break an ES cluster by having a low number of available
+file descriptors.</p>
+
+<p>When accessing indices ES will use FDs, but when connecting
+with other members of the cluster or with clients, it will need also to create
+sockets, and therefore, to use FDs.</p>
+
+<p>In the web I read often 65000 as the minimal number of available FD that should
+be provided. In my systems I use to configure at least one million.</p>
+
+<h1>How to check information about file descriptors?</h1>
+
+<h2>Via REST API</h2>
+
+<p>We can ask each node about information on the cluster nodes:</p>
+
+<pre><code>$ curl -s "http://127.0.0.1:9200/_nodes/process?pretty"
+[...]
+"v5_G7FNvRBOLpS1MMByX4w": {
+    "process": {
+    "mlockall": true,
+**  "max_file_descriptors": 200000,**
+    "id": 2165,
+    "refresh_interval_in_millis": 1000
+},
+"name": "elastic2",
+[...]
+</code></pre>
+
+<p>Or if we know the identifier of a node we can also filter:</p>
+
+<pre><code>$ curl -s "http://127.0.0.1:9200/_nodes/process?pretty" | jq '.nodes.rsYeYNh2STqF5KyzFiUFqQ.process.max_file_descriptors'
+200000
+</code></pre>
+
+<p>Maybe <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cat.html">one of the <em>cat</em> APIs</a> has some way of reporting current number of used FDs, instead of the max, which is what I can see in the previous call.</p>
+
+<h2>With ElasticSearch Plugins</h2>
+
+<p>ElasticSearch has some so-named <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-plugins.html#site">site plugins</a>:</p>
+
+<ul>
+<li>With <a href="https://github.com/royrusso/elasticsearch-HQ">HQ</a> I can see the number of currently <strong>opened file descriptors</strong>.</li>
+<li>With <a href="https://github.com/lukas-vlcek/bigdesk">BigDesk</a> I have a graph of the <strong>number of FD</strong> and the <strong>max allowed FDs</strong>.</li>
+<li>With <a href="https://github.com/mobz/elasticsearch-head">Head</a> we just have the same information we can have asking the API from the command line.</li>
+</ul>
+
+
+<h2>With the ProcFS</h2>
+
+<p>Or in each server we can get the PID of each ES instance and ask the procfs
+about the <strong>effective limits</strong>:</p>
+
+<pre><code>$ ps aux | grep java
+elastic+ 17586 17.4 54.9 8102680 4225596 ?     SLl  Mar04 522:30 /usr/bin/java -Xms3584M -Xmx3584M [...]
+$
+$ cat /proc/17586/limits
+Limit                     Soft Limit           Hard Limit           Units     
+Max cpu time              unlimited            unlimited            seconds   
+Max file size             unlimited            unlimited            bytes     
+Max data size             unlimited            unlimited            bytes     
+Max stack size            8388608              unlimited            bytes     
+Max core file size        0                    unlimited            bytes     
+Max resident set          unlimited            unlimited            bytes     
+Max processes             59935                59935                processes 
+**Max open files            200000               200000               files**
+Max locked memory         unlimited            unlimited            bytes     
+Max address space         unlimited            unlimited            bytes     
+Max file locks            unlimited            unlimited            locks     
+Max pending signals       59935                59935                signals   
+Max msgqueue size         819200               819200               bytes     
+Max nice priority         0                    0                    
+Max realtime priority     0                    0                    
+Max realtime timeout      unlimited            unlimited            us
+$
+</code></pre>
+
+<p>That figure is the important one, when configuring limits for an ES server.</p>
+
+<h2>System calls: getrlimit and prlimit</h2>
+
+<p>The <code>getrlimit</code> and <code>prlimit</code> system calls can be also used to fetch the current
+and maximal figures of file descriptors.</p>
+
+<h1>How to configure the number of total available FDs</h1>
+
+<h2>System-wide configuration</h2>
+
+<p>Via SysFS we can tune those kernel parameters[9] that affect the entire system:</p>
+
+<pre><code>$ sysctl fs.file-nr
+fs.file-nr = 9984       0       1149332
+</code></pre>
+
+<p>Where 9984 is the current number of opened file descriptors.
+<code>man sysctl</code> can throw some help on how to change the max number.</p>
+
+<h2>Shell session configuration</h2>
+
+<p>The shell imposes another additional limitation to the users and its processes
+via ulimit [10]:</p>
+
+<pre><code>$ ulimit -n
+1000000
+</code></pre>
+
+<p>Any process I launch in this shell session inherits that limit and can open so
+many FD as it wants solong neither this limit nor the kernel limit are surpassed.</p>
+
+<h2>PAM authentication</h2>
+
+<p>The file <code>/etc/security/limits.conf</code> can contain some rules like:</p>
+
+<pre><code>* soft nofile 1024000
+* hard nofile 1024000
+</code></pre>
+
+<p>to define soft and hard limits for the number of files.</p>
+
+<p>Changes in this file require the users to log out and log in again to take
+effect [10].</p>
+
+<p>Nonetheless, not every process is controlled by these PAM rules. Afaik, only
+processes which were born in a login shell[4] will inherit these limits.</p>
+
+<p>Processes started from Upstart do not inherit these limits. See [3].</p>
+
+<h2>Upstart tasks</h2>
+
+<p>The <em>stanza</em> <code>limit nofile 4096 4096</code>[1] in the Upstart task in /etc/init/ sets
+the limit for the processes started in the Upstart job.</p>
+
+<p>Note that the PAM limits (<code>/etc/security/limits.conf</code>) are not applied to these
+jobs, so this <code>limit</code> statement is the only way to be sure these processes will
+have enough FD available.</p>
+
+<p>See [2] and [3].</p>
+
+<h2>ElasticSearch configuration</h2>
+
+<p>I can see <code>MAX_OPEN_FILES=200000</code> in <code>/etc/default/elasticsearch</code>. That file is
+read whenever <code>/etc/init.d/elasticsearch</code> is run, and that parameter is applied
+to <code>ulimit -n</code>, so be sure you write there a meaningful number.</p>
+
+<h2>Tweaking a running process</h2>
+
+<p>The same as we could read the limits for a process with <code>prlimit</code> or <code>getrlimit</code>
+system calls, we can also set those limits with <code>prlimit</code> or <code>setrlimit</code>.</p>
+
+<p>If we don&rsquo;t want to implement a program to use those system calls we can:</p>
+
+<pre><code>1. Use the `prlimit` command of the util-linux package.
+2. Use a short [solution Lars Windolf wrote](http://lzone.de/Debian%20Ubuntu%20ulimit%20Check%20List)[5,6]
+</code></pre>
+
+<p>To use the <code>prlimit</code> command[7] you will need <code>util-linux</code> package[8] installed, version >=2.21.
+Ubuntu 14.04 is currently lacking this program as it uses version 2.20.</p>
+
+<p>The great advantage of this system calls is that we don&rsquo;t need to restart the
+process to change the limits.</p>
+
+<h1>Refs/Notes</h1>
+
+<ol>
+<li><a href="http://upstart.ubuntu.com/wiki/Stanzas#limit">Official Upstart Stanzas Doc &ndash; limit</a></li>
+<li><a href="http://bryanmarty.com/2012/02/10/setting-nofile-limit-upstart/">Setting the nofile limit in upstart</a></li>
+<li><a href="https://coderwall.com/p/myodcq/setting-max-file-descriptors-and-other-limits-with-upstart-on-debian-ubuntu">Setting max file descriptors and other limits with upstart on debian/ubuntu</a></li>
+<li>and maybe those from SysV init.d[3], although my ES service runs from <code>/etc/init.d/elasticsearch</code> and follows the same limits as Upstart tasks (Ubuntu 14.04)</li>
+<li><a href="http://lzone.de/Debian%20Ubuntu%20ulimit%20Check%20List">The Debian/Ubuntu ulimit Check List</a></li>
+<li><a href="https://gist.github.com/pfigue/976d781c282d7780412d">Gist &ndash; set_limit_nofile.c</a></li>
+<li><a href="http://manpages.courier-mta.org/htmlman1/prlimit.1.html">Manpage &ndash; prlimit</a></li>
+<li><a href="https://github.com/karelzak/util-linux">Github: util-linux is a random collection of Linux utilities</a></li>
+<li><a href="http://www.cyberciti.biz/tips/linux-procfs-file-descriptors.html">Linux: Find Out How Many File Descriptors Are Being Used</a></li>
+<li><a href="http://www.unixmantra.com/2013/06/resource-limits-on-unix-systems-ulimit.html">Resource limits on UNIX systems (ulimit)</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">pfigue</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-06T16:07:00+01:00" pubdate data-updated="true">Mar 6<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/devops/'>devops</a>, <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/" data-via="__pfigue" data-counturl="http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/04/02/bulk-user-creation-in-vbulletin-5-with-casperjs/" title="Previous Post: Bulk user creation in vBulletin 5 with CasperJS">&laquo; Bulk user creation in vBulletin 5 with CasperJS</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <ul id="recent_posts">
+      <li class="post">
+      <a href="http://pfigue.github.com" alt="Home"><img src="/images/Home.png"></a>
+      <a href="http://pfigue.github.com/archives/" alt="Archives"><img src="/images/Calendar.png"></a>
+      <a href="mailto:" alt="E-Mail"><img src="/images/Envelope.png"></a>
+      <a href="http://pfigue.github.com/atom.xml" alt="subscribe feed"><img src="/images/rss_big.png"></a>
+      </li>
+  </ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/06/file-descriptors-and-elasticsearch/">File Descriptors and ElasticSearch</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/02/bulk-user-creation-in-vbulletin-5-with-casperjs/">Bulk user creation in vBulletin 5 with CasperJS</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/04/creating-a-new-profile-for-lintian/">Creating a new profile for Lintian</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/using-vagrant-with-lxc-linux-containers/">Using Vagrant with LXC Linux Containers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/my-first-steps-with-vagrant/">My first steps with Vagrant</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("__pfigue", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/__pfigue" class="twitter-follow-button" data-show-count="false">Follow @__pfigue</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - pfigue -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pfigue';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/';
+        var disqus_url = 'http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

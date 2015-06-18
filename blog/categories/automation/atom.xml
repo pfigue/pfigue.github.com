@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Automation | pfigue]]></title>
+  <link href="http://pfigue.github.com/blog/categories/automation/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.com/"/>
+  <updated>2015-06-18T15:24:31+02:00</updated>
+  <id>http://pfigue.github.com/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Bulk user creation in vBulletin 5 with CasperJS]]></title>
+    <link href="http://pfigue.github.com/blog/2014/04/02/bulk-user-creation-in-vbulletin-5-with-casperjs/"/>
+    <updated>2014-04-02T20:48:00+02:00</updated>
+    <id>http://pfigue.github.com/blog/2014/04/02/bulk-user-creation-in-vbulletin-5-with-casperjs</id>
+    <content type="html"><![CDATA[<h2>The Problem</h2>
+
+<p>I had to create around 2000 users into a forum running with vBulletin 5.</p>
+
+<p>I saw 3 options:</p>
+
+<ul>
+<li> Using vBulletin API, but for version 5 it is not yet documented at the time of writing this. One alternative is to reverse engineer it with help of version 4 docs., but this is not the fastest.</li>
+<li> Accesing directly the database and creating there the needed rows, but I had no access to the database, and a little bit of reversing is probably needed to understand the dependences between the different tables.</li>
+<li> Use PhantomJS/CasperJS/python-mechanize to manipulate the interface in an automated way. The interface had some Javascript, so python-mechanize would be excluded. CasperJS (a framework, running over PhantomJS) is the option I chose.</li>
+</ul>
+
+
+<h2>CasperJS</h2>
+
+<p>I have never used it before, neither PhantomJS, so I didn&rsquo;t know how complicated it would be. <a href="http://docs.casperjs.org/en/latest/installation.html">Fortunately, it was quite easy and fast to setup</a>.</p>
+
+<p>This is the script I used, which can be used as <code>casperjs script.js "newuser_username" "newuser_password" "newuser_email"</code></p>
+
+<pre><code>var casper = require('casper').create();
+
+casper.start('http://&lt;URL to the forum&gt;/admincp/', function() {
+    this.echo(this.getTitle()); // Some logging to know if the script is running
+    console.log(casper.cli.args[0])
+    console.log(casper.cli.args[1])
+    console.log(casper.cli.args[2])
+    this.fill('form[action="../login.php?do=login"]',
+        {
+            'vb_login_username':'&lt;An Admin Username&gt;',
+            'vb_login_password': '&lt;Admin\'s password&gt;,
+    },
+    true);
+});
+
+casper.thenOpen('http://&lt;URL to the forum&gt;/admincp/user.php?do=add&amp;', function(){
+    this.echo(this.getTitle()); // Some logging to know if the script is running
+    this.fill('form[action="user.php?do=update"]',
+        {
+            'user[username]': casper.cli.args[0],
+            'password': casper.cli.args[1],
+            'user[email]': casper.cli.args[2],
+            'user[membergroupids][]': ['14', '12'],  // List of group numbers (actually, strings) the user belongs to.
+        },
+        true);
+});
+
+casper.then(function() {
+    this.echo(this.getTitle());  // Some logging to know if the script is running
+//    console.log(casper.cli.args[0])
+});
+
+casper.run();
+</code></pre>
+
+<h2>Results</h2>
+
+<p>First I tried creating one user, then creating three, then all the 2000 users. It needs around 10 or 15 seconds per user, so it is not the fastest solution, but the simplest I had.</p>
+
+<p>The script can be called several times with identical parameters and the result will be the same.</p>
+
+<p>Running several instances in parallel can also be an alternative.</p>
+]]></content>
+  </entry>
+  
+</feed>

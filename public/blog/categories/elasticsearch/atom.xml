@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: elasticsearch | pfigue]]></title>
+  <link href="http://pfigue.github.com/blog/categories/elasticsearch/atom.xml" rel="self"/>
+  <link href="http://pfigue.github.com/"/>
+  <updated>2015-06-18T15:24:31+02:00</updated>
+  <id>http://pfigue.github.com/</id>
+  <author>
+    <name><![CDATA[pfigue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[File Descriptors and ElasticSearch]]></title>
+    <link href="http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch/"/>
+    <updated>2015-03-06T16:07:00+01:00</updated>
+    <id>http://pfigue.github.com/blog/2015/03/06/file-descriptors-and-elasticsearch</id>
+    <content type="html"><![CDATA[<h1>ElasticSearch consumes an high number of file descriptors.</h1>
+
+<p>It is quite easy to break an ES cluster by having a low number of available
+file descriptors.</p>
+
+<p>When accessing indices ES will use FDs, but when connecting
+with other members of the cluster or with clients, it will need also to create
+sockets, and therefore, to use FDs.</p>
+
+<p>In the web I read often 65000 as the minimal number of available FD that should
+be provided. In my systems I use to configure at least one million.</p>
+
+<h1>How to check information about file descriptors?</h1>
+
+<h2>Via REST API</h2>
+
+<p>We can ask each node about information on the cluster nodes:</p>
+
+<pre><code>$ curl -s "http://127.0.0.1:9200/_nodes/process?pretty"
+[...]
+"v5_G7FNvRBOLpS1MMByX4w": {
+    "process": {
+    "mlockall": true,
+**  "max_file_descriptors": 200000,**
+    "id": 2165,
+    "refresh_interval_in_millis": 1000
+},
+"name": "elastic2",
+[...]
+</code></pre>
+
+<p>Or if we know the identifier of a node we can also filter:</p>
+
+<pre><code>$ curl -s "http://127.0.0.1:9200/_nodes/process?pretty" | jq '.nodes.rsYeYNh2STqF5KyzFiUFqQ.process.max_file_descriptors'
+200000
+</code></pre>
+
+<p>Maybe <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cat.html">one of the <em>cat</em> APIs</a> has some way of reporting current number of used FDs, instead of the max, which is what I can see in the previous call.</p>
+
+<h2>With ElasticSearch Plugins</h2>
+
+<p>ElasticSearch has some so-named <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-plugins.html#site">site plugins</a>:</p>
+
+<ul>
+<li>With <a href="https://github.com/royrusso/elasticsearch-HQ">HQ</a> I can see the number of currently <strong>opened file descriptors</strong>.</li>
+<li>With <a href="https://github.com/lukas-vlcek/bigdesk">BigDesk</a> I have a graph of the <strong>number of FD</strong> and the <strong>max allowed FDs</strong>.</li>
+<li>With <a href="https://github.com/mobz/elasticsearch-head">Head</a> we just have the same information we can have asking the API from the command line.</li>
+</ul>
+
+
+<h2>With the ProcFS</h2>
+
+<p>Or in each server we can get the PID of each ES instance and ask the procfs
+about the <strong>effective limits</strong>:</p>
+
+<pre><code>$ ps aux | grep java
+elastic+ 17586 17.4 54.9 8102680 4225596 ?     SLl  Mar04 522:30 /usr/bin/java -Xms3584M -Xmx3584M [...]
+$
+$ cat /proc/17586/limits
+Limit                     Soft Limit           Hard Limit           Units     
+Max cpu time              unlimited            unlimited            seconds   
+Max file size             unlimited            unlimited            bytes     
+Max data size             unlimited            unlimited            bytes     
+Max stack size            8388608              unlimited            bytes     
+Max core file size        0                    unlimited            bytes     
+Max resident set          unlimited            unlimited            bytes     
+Max processes             59935                59935                processes 
+**Max open files            200000               200000               files**
+Max locked memory         unlimited            unlimited            bytes     
+Max address space         unlimited            unlimited            bytes     
+Max file locks            unlimited            unlimited            locks     
+Max pending signals       59935                59935                signals   
+Max msgqueue size         819200               819200               bytes     
+Max nice priority         0                    0                    
+Max realtime priority     0                    0                    
+Max realtime timeout      unlimited            unlimited            us
+$
+</code></pre>
+
+<p>That figure is the important one, when configuring limits for an ES server.</p>
+
+<h2>System calls: getrlimit and prlimit</h2>
+
+<p>The <code>getrlimit</code> and <code>prlimit</code> system calls can be also used to fetch the current
+and maximal figures of file descriptors.</p>
+
+<h1>How to configure the number of total available FDs</h1>
+
+<h2>System-wide configuration</h2>
+
+<p>Via SysFS we can tune those kernel parameters[9] that affect the entire system:</p>
+
+<pre><code>$ sysctl fs.file-nr
+fs.file-nr = 9984       0       1149332
+</code></pre>
+
+<p>Where 9984 is the current number of opened file descriptors.
+<code>man sysctl</code> can throw some help on how to change the max number.</p>
+
+<h2>Shell session configuration</h2>
+
+<p>The shell imposes another additional limitation to the users and its processes
+via ulimit [10]:</p>
+
+<pre><code>$ ulimit -n
+1000000
+</code></pre>
+
+<p>Any process I launch in this shell session inherits that limit and can open so
+many FD as it wants solong neither this limit nor the kernel limit are surpassed.</p>
+
+<h2>PAM authentication</h2>
+
+<p>The file <code>/etc/security/limits.conf</code> can contain some rules like:</p>
+
+<pre><code>* soft nofile 1024000
+* hard nofile 1024000
+</code></pre>
+
+<p>to define soft and hard limits for the number of files.</p>
+
+<p>Changes in this file require the users to log out and log in again to take
+effect [10].</p>
+
+<p>Nonetheless, not every process is controlled by these PAM rules. Afaik, only
+processes which were born in a login shell[4] will inherit these limits.</p>
+
+<p>Processes started from Upstart do not inherit these limits. See [3].</p>
+
+<h2>Upstart tasks</h2>
+
+<p>The <em>stanza</em> <code>limit nofile 4096 4096</code>[1] in the Upstart task in /etc/init/ sets
+the limit for the processes started in the Upstart job.</p>
+
+<p>Note that the PAM limits (<code>/etc/security/limits.conf</code>) are not applied to these
+jobs, so this <code>limit</code> statement is the only way to be sure these processes will
+have enough FD available.</p>
+
+<p>See [2] and [3].</p>
+
+<h2>ElasticSearch configuration</h2>
+
+<p>I can see <code>MAX_OPEN_FILES=200000</code> in <code>/etc/default/elasticsearch</code>. That file is
+read whenever <code>/etc/init.d/elasticsearch</code> is run, and that parameter is applied
+to <code>ulimit -n</code>, so be sure you write there a meaningful number.</p>
+
+<h2>Tweaking a running process</h2>
+
+<p>The same as we could read the limits for a process with <code>prlimit</code> or <code>getrlimit</code>
+system calls, we can also set those limits with <code>prlimit</code> or <code>setrlimit</code>.</p>
+
+<p>If we don&rsquo;t want to implement a program to use those system calls we can:</p>
+
+<pre><code>1. Use the `prlimit` command of the util-linux package.
+2. Use a short [solution Lars Windolf wrote](http://lzone.de/Debian%20Ubuntu%20ulimit%20Check%20List)[5,6]
+</code></pre>
+
+<p>To use the <code>prlimit</code> command[7] you will need <code>util-linux</code> package[8] installed, version >=2.21.
+Ubuntu 14.04 is currently lacking this program as it uses version 2.20.</p>
+
+<p>The great advantage of this system calls is that we don&rsquo;t need to restart the
+process to change the limits.</p>
+
+<h1>Refs/Notes</h1>
+
+<ol>
+<li><a href="http://upstart.ubuntu.com/wiki/Stanzas#limit">Official Upstart Stanzas Doc &ndash; limit</a></li>
+<li><a href="http://bryanmarty.com/2012/02/10/setting-nofile-limit-upstart/">Setting the nofile limit in upstart</a></li>
+<li><a href="https://coderwall.com/p/myodcq/setting-max-file-descriptors-and-other-limits-with-upstart-on-debian-ubuntu">Setting max file descriptors and other limits with upstart on debian/ubuntu</a></li>
+<li>and maybe those from SysV init.d[3], although my ES service runs from <code>/etc/init.d/elasticsearch</code> and follows the same limits as Upstart tasks (Ubuntu 14.04)</li>
+<li><a href="http://lzone.de/Debian%20Ubuntu%20ulimit%20Check%20List">The Debian/Ubuntu ulimit Check List</a></li>
+<li><a href="https://gist.github.com/pfigue/976d781c282d7780412d">Gist &ndash; set_limit_nofile.c</a></li>
+<li><a href="http://manpages.courier-mta.org/htmlman1/prlimit.1.html">Manpage &ndash; prlimit</a></li>
+<li><a href="https://github.com/karelzak/util-linux">Github: util-linux is a random collection of Linux utilities</a></li>
+<li><a href="http://www.cyberciti.biz/tips/linux-procfs-file-descriptors.html">Linux: Find Out How Many File Descriptors Are Being Used</a></li>
+<li><a href="http://www.unixmantra.com/2013/06/resource-limits-on-unix-systems-ulimit.html">Resource limits on UNIX systems (ulimit)</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>
