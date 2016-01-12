@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Logging in into the STUPS docker registry (Pier One)</title>
+        <link rel="stylesheet" href="https://pfigue.github.io/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://pfigue.github.io/">moar pfigue notes... </a></h1>
+                <nav><ul>
+                    <li><a href="https://pfigue.github.io/category/containers.html">containers</a></li>
+                    <li><a href="https://pfigue.github.io/category/notizen.html">notizen</a></li>
+                    <li><a href="https://pfigue.github.io/category/python.html">python</a></li>
+                    <li class="active"><a href="https://pfigue.github.io/category/stups.html">stups</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://pfigue.github.io/stups-logging-pierone.html" rel="bookmark"
+           title="Permalink to Logging in into the STUPS docker registry (Pier One)">Logging in into the STUPS docker registry (Pier One)</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2015-12-14T00:00:00+01:00">
+                Published: Mon 14 December 2015
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://pfigue.github.io/author/pfigue.html">pfigue</a>
+        </address>
+<p>In <a href="https://pfigue.github.io/category/stups.html">stups</a>.</p>
+<p>tags: <a href="https://pfigue.github.io/tag/stups.html">stups</a> <a href="https://pfigue.github.io/tag/pierone.html">pierone</a> </p>
+</footer><!-- /.post-info -->      <p>I log in as <em>johndoe</em>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./venv-py3.4/bin/pierone login --user johndoe
+Getting OAuth2 token <span class="s2">&quot;pierone&quot;</span>.. OK
+Storing Docker client configuration in /home/jdoe/.docker/config.json.. OK
+</pre></div>
+
+
+<p>This has written some Docker configuration:</p>
+<div class="highlight"><pre><span class="nv">$ </span>cat  ~/.docker/config.json <span class="p">|</span> jq <span class="s1">&#39;.&#39;</span>
+<span class="o">{</span>
+  <span class="s2">&quot;auths&quot;</span>: <span class="o">{</span>
+    <span class="s2">&quot;https://pierone.repo&quot;</span>: <span class="o">{</span>
+      <span class="s2">&quot;email&quot;</span>: <span class="s2">&quot;no-mail-required@example.org&quot;</span>,
+      <span class="s2">&quot;auth&quot;</span>: <span class="s2">&quot;b2F1dGgyOjQ4NTEyODZiLTZmZTctNTBlYy05MjAxLTlhNzkwNjM5NzQzMA==&quot;</span>
+    <span class="o">}</span>,
+    <span class="s2">&quot;null&quot;</span>: <span class="o">{</span>
+      <span class="s2">&quot;email&quot;</span>: <span class="s2">&quot;no-mail-required@example.org&quot;</span>,
+      <span class="s2">&quot;auth&quot;</span>: <span class="s2">&quot;b2F1dGgyOjM2NTEyODZiLTUwNDUtZWIyMy05MjAxLWVhNzYwNmZiNzIzMQ==&quot;</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<p>Tagging the image <em>04d55adc8567</em> before pushing:</p>
+<div class="highlight"><pre><span class="nv">$ </span>sudo docker tag 04d55adc8567 pierone.repo/teamName/imageName:0.1-VERSION
+</pre></div>
+
+
+<p>Pushing to the Docker Hub:</p>
+<div class="highlight"><pre><span class="nv">$ </span>sudo docker push pierone.repo/teamName/imageName:0.1-VERSION
+The push refers to a repository <span class="o">[</span>pierone.repo/teamName/imageName<span class="o">]</span> <span class="o">(</span>len: 1<span class="o">)</span>
+04d55adc8567: Image already exists 
+<span class="o">[</span>...<span class="o">]</span>
+59fcbbb9028a: Image already exists 
+0.1-VERSION: digest: sha256:7c81309cc089f80525fd777788c8401ec9a37153e8b98dd8e9ef3231440653da size: 8500
+</pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
