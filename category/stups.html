@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Pablo Figue Blog - stups</title>
+        <link rel="stylesheet" href="https://pfigue.github.io/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://pfigue.github.io/">Pablo Figue Blog </a></h1>
+                <nav><ul>
+                    <li><a href="https://pfigue.github.io/category/containers.html">containers</a></li>
+                    <li><a href="https://pfigue.github.io/category/notizen.html">notizen</a></li>
+                    <li><a href="https://pfigue.github.io/category/python.html">python</a></li>
+                    <li class="active"><a href="https://pfigue.github.io/category/stups.html">stups</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="https://pfigue.github.io/stups-creating-mai-profile.html">Creating a mai profile for STUPS</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2015-12-14T00:00:00+01:00">
+                Published: Mon 14 December 2015
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://pfigue.github.io/author/pablo-figue.html">Pablo Figue</a>
+        </address>
+<p>In <a href="https://pfigue.github.io/category/stups.html">stups</a>.</p>
+<p>tags: <a href="https://pfigue.github.io/tag/mai.html">mai</a> <a href="https://pfigue.github.io/tag/stups.html">stups</a> </p>
+</footer><!-- /.post-info --><p>The goal of <em>mai</em> tool in the STUPS suite is to provide authentication tokens to access AWS.</p>
+<p>You have to create a <em>mai</em> profile and then log in into it, so you will get a token that will be used by other STUPS tools (e.g. <em>senza</em>). That token will last 1 hour. After that hour you will have to create a new one.</p>
+<p>This is how I create a <em>mai profile</em>:</p>
+<pre class="literal-block">
+$ ./venv-py3.4/bin/mai create &lt;profile name&gt;
+Identity provider URL: &lt;e.g. https://aws.acme.net&gt;
+SAML username: &lt;e.g. joe&#64;acme.net&gt;
+Authenticating against https://aws.acme.net.. OK
+Please select one role
+1) AWS Account 123456789012 (acme-team1): AWS-Profile-Name
+2) AWS Account 210987654321 (acme-team2): AWS-Profile-Name
+Please select (1-2): 2
+Storing new profile in /home/pfigue/.config/mai/mai.yaml.. OK
+</pre>
+<p>If now I list that <cite>mai.yaml</cite> file I see several entries like this, one for each <em>mai</em> profile I created:</p>
+<pre class="literal-block">
+profileName1:
+  saml_identity_provider_url: https://aws.acme.net/
+  saml_role: ['arn:aws:iam::210987654321:saml-provider/AWS-Profile-Name', 'arn:aws:iam::210987654321:role/AWS-Profile-Provider',
+    acme-team2]
+  saml_user: joe&#64;acme.net
+</pre>
+<p>I can also do:</p>
+<pre class="literal-block">
+$ ./venv-py3.4/bin/mai create acme-team2 --url https://aws.acme.net/ --user joe&#64;acme.net
+</pre>
+<p>Here is the <a class="reference external" href="http://stups.readthedocs.org/en/latest/components/mai.html">documentation for mai</a>.</p>
+                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://pfigue.github.io/stups-logging-pierone.html" rel="bookmark"
+                           title="Permalink to Logging in into the STUPS docker registry (Pier One)">Logging in into the STUPS docker registry (Pier One)</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2015-12-14T00:00:00+01:00">
+                Published: Mon 14 December 2015
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://pfigue.github.io/author/pablo-figue.html">Pablo Figue</a>
+        </address>
+<p>In <a href="https://pfigue.github.io/category/stups.html">stups</a>.</p>
+<p>tags: <a href="https://pfigue.github.io/tag/stups.html">stups</a> <a href="https://pfigue.github.io/tag/pierone.html">pierone</a> </p>
+</footer><!-- /.post-info -->                <p>I log in as <em>johndoe</em>:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./venv-py3.4/bin/pierone login --user johndoe
+Getting OAuth2 token <span class="s2">&quot;pierone&quot;</span>.. OK
+Storing Docker client configuration in /home/jdoe/.docker/config.json.. OK
+</pre></div>
+
+
+<p>This has written some Docker configuration:</p>
+<div class="highlight"><pre><span class="nv">$ </span>cat  ~/.docker/config.json <span class="p">|</span> jq <span class="s1">&#39;.&#39;</span>
+<span class="o">{</span>
+  <span class="s2">&quot;auths&quot;</span>: <span class="o">{</span>
+    <span class="s2">&quot;https://pierone.repo&quot;</span>: <span class="o">{</span>
+      <span class="s2">&quot;email&quot;</span>: <span class="s2">&quot;no-mail-required@example.org&quot;</span>,
+      <span class="s2">&quot;auth&quot;</span>: <span class="s2">&quot;b2F1dGgyOjQ4NTEyODZiLTZmZTctNTBlYy05MjAxLTlhNzkwNjM5NzQzMA==&quot;</span>
+    <span class="o">}</span>,
+    <span class="s2">&quot;null ...</span></pre></div>
+                <a class="readmore" href="https://pfigue.github.io/stups-logging-pierone.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://pfigue.github.io/stups-logging-with-mai.html" rel="bookmark"
+                           title="Permalink to Log in with STUPS `mai` into AWS.">Log in with STUPS `mai` into AWS.</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2015-12-14T00:00:00+01:00">
+                Published: Mon 14 December 2015
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://pfigue.github.io/author/pablo-figue.html">Pablo Figue</a>
+        </address>
+<p>In <a href="https://pfigue.github.io/category/stups.html">stups</a>.</p>
+<p>tags: <a href="https://pfigue.github.io/tag/stups.html">stups</a> <a href="https://pfigue.github.io/tag/mai.html">mai</a> </p>
+</footer><!-- /.post-info -->                <p>Before log in with <em>mai</em>, we can list which profiles we have:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./venv-py3.4/bin/mai list                                                                                                                                                                                  
+Name             │Role                                                             │Url                     │User                      
+profileName1    AWS Account <span class="m">288593816804</span> <span class="o">(</span>acme-team2<span class="o">)</span>: AWS-Profile-Name     https://aws.acme.net joe@acme.net
+</pre></div>
+
+
+<p>ok, now I know I want to log in into the <code>profileName1</code> profile:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./venv-py3.4/bin ...</pre></div>
+                <a class="readmore" href="https://pfigue.github.io/stups-logging-with-mai.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+                </ol><!-- /#posts-list -->
+                </section><!-- /#content -->
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

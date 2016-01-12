@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Containers and Capabilities</title>
+        <link rel="stylesheet" href="https://pfigue.github.io/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://pfigue.github.io/">Pablo Figue Blog </a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://pfigue.github.io/category/containers.html">containers</a></li>
+                    <li><a href="https://pfigue.github.io/category/notizen.html">notizen</a></li>
+                    <li><a href="https://pfigue.github.io/category/python.html">python</a></li>
+                    <li><a href="https://pfigue.github.io/category/stups.html">stups</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://pfigue.github.io/container-capabilities.html" rel="bookmark"
+           title="Permalink to Containers and Capabilities">Containers and Capabilities</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2015-11-03T00:00:00+01:00">
+                Published: Tue 03 November 2015
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://pfigue.github.io/author/pfigue.html">pfigue</a>
+        </address>
+<p>In <a href="https://pfigue.github.io/category/containers.html">containers</a>.</p>
+<p>tags: <a href="https://pfigue.github.io/tag/containers.html">containers</a> <a href="https://pfigue.github.io/tag/docker.html">docker</a> <a href="https://pfigue.github.io/tag/sysdig.html">sysdig</a> <a href="https://pfigue.github.io/tag/capabilities.html">capabilities</a> </p>
+</footer><!-- /.post-info -->      <p>So, I was inside of a container and I wanted to use <a href="http://www.sysdig.org/">sysdig</a>. Sysdig needs a <code>sysdig-probe</code> module inside the kernel, which will trap all system calls and log them into a buffer.</p>
+<p>If I had full root access to the host, I could <code>modprobe</code> the module myself, but I haven't, as I was getting:</p>
+<div class="highlight"><pre># modprobe sysdig-probe
+FATAL: Error inserting sysdig_probe (/lib/modules/3.13.0-37-generic/updates/dkms/sysdig-probe.ko): Operation not permitted
+</pre></div>
+
+
+<p>That was strange to me as I was root.</p>
+<h1>What is controlling this behaviour?</h1>
+<p>Well, I was researching and I found the <code>man 7 capabilities</code> page. It seems there are two capabilities (CAP_SYS_MODULE and CAP_SYS_ADMIN) which seems to allow a thread to perform <em>insmod/rmmod</em> operations.</p>
+<p><em>Note: somewhere I read it is CAP_SYS_ADMIN, and somewhere else I saw it is actually CAP_SYS_MODULE. Right now, I don't know if there are two, or it depends on the kernel version/config.</em></p>
+<h1>Which capabilities has my container?</h1>
+<p>From inside my container I ran:</p>
+<div class="highlight"><pre># cat /proc/self/status
+[...]
+CapInh: 0000000000000000
+CapPrm: 0000001dbdbeffff
+CapEff: 0000001dbdbeffff
+CapBnd: 0000001dbdbeffff
+[...]
+</pre></div>
+
+
+<p>And I saw those four CapXXX parameters, described a little bit in <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.txt">Table 1-2</a>.</p>
+<p>I wrote a <a href="https://gist.github.com/pfigue/3044c6a38be254645ca0">little C program</a> to decipher that hexadecimal value 0x0000001dbdbeffff:</p>
+<div class="highlight"><pre><span class="nv">$ </span>./cap1 0000001dbdbeffff                                                                                                                                                                                    
+capab.: 0000001dbdbeffff
+CAP_CHMOD<span class="o">(</span>0<span class="o">)</span> is enabled.
+CAP_DAC_OVERRIDE<span class="o">(</span>1<span class="o">)</span> is enabled.
+CAP_DAC_READ_SEARCH<span class="o">(</span>2<span class="o">)</span> is enabled.
+CAP_FOWNER<span class="o">(</span>3<span class="o">)</span> is enabled.
+CAP_FSETID<span class="o">(</span>4<span class="o">)</span> is enabled.
+CAP_KILL<span class="o">(</span>5<span class="o">)</span> is enabled.
+CAP_SETGID<span class="o">(</span>6<span class="o">)</span> is enabled.
+CAP_SETUID<span class="o">(</span>7<span class="o">)</span> is enabled.
+CAP_SETPCAP<span class="o">(</span>8<span class="o">)</span> is enabled.
+CAP_LINUX_IMMUTABLE<span class="o">(</span>9<span class="o">)</span> is enabled.
+CAP_NET_BIND_SERVICE<span class="o">(</span>10<span class="o">)</span> is enabled.
+CAP_NET_BROADCAST<span class="o">(</span>11<span class="o">)</span> is enabled.
+CAP_NET_ADMIN<span class="o">(</span>12<span class="o">)</span> is enabled.
+CAP_NET_RAW<span class="o">(</span>13<span class="o">)</span> is enabled.
+CAP_IPC_LOCK<span class="o">(</span>14<span class="o">)</span> is enabled.
+CAP_IPC_OWNER<span class="o">(</span>15<span class="o">)</span> is enabled.
+CAP_SYS_MODULE<span class="o">(</span>16<span class="o">)</span> is disabled.
+CAP_SYS_RAWIO<span class="o">(</span>17<span class="o">)</span> is enabled.
+CAP_SYS_CHROOT<span class="o">(</span>18<span class="o">)</span> is enabled.
+CAP_SYS_PTRACE<span class="o">(</span>19<span class="o">)</span> is enabled.
+CAP_SYS_PACCT<span class="o">(</span>20<span class="o">)</span> is enabled.
+CAP_SYS_ADMIN<span class="o">(</span>21<span class="o">)</span> is enabled.
+CAP_SYS_BOOT<span class="o">(</span>22<span class="o">)</span> is disabled.
+CAP_SYS_NICE<span class="o">(</span>23<span class="o">)</span> is enabled.
+CAP_SYS_RESOURCE<span class="o">(</span>24<span class="o">)</span> is enabled.
+CAP_SYS_TIME<span class="o">(</span>25<span class="o">)</span> is disabled.
+CAP_SYS_TTY_CONFIG<span class="o">(</span>26<span class="o">)</span> is enabled.
+CAP_MKNOD<span class="o">(</span>27<span class="o">)</span> is enabled.
+CAP_LEASE<span class="o">(</span>28<span class="o">)</span> is enabled.
+CAP_AUDIT_WRITE<span class="o">(</span>29<span class="o">)</span> is enabled.
+CAP_AUDIT_CONTROL<span class="o">(</span>30<span class="o">)</span> is disabled.
+CAP_SETFCAP<span class="o">(</span>31<span class="o">)</span> is enabled.
+</pre></div>
+
+
+<p>To sum up: <em>CAP_SYS_MODULE</em>, <em>CAP_SYS_BOOT</em>, <em>CAP_SYS_TIME</em>, <em>CAP_AUDIT_CONTROL</em> are disabled and <em>CAP_SYS_ADMIN</em> is enabled.</p>
+<p>What is preventing me to insert that module is that disabled <em>CAP_SYS_MODULE</em>. How to enable it from inside the container? I don't know yet how to achieve that.</p>
+<h1>Refs:</h1>
+<ol>
+<li><a href="https://www.kernel.org/doc/Documentation/filesystems/proc.txt">Kerneldocs - The /proc filesystem</a></li>
+<li><a href="https://gist.github.com/pfigue/3044c6a38be254645ca0">Decoding the capabilities mask.</a></li>
+<li><a href="http://www.sysdig.org/">sysdig</a></li>
+</ol>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
