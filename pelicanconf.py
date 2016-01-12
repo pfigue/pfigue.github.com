@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
-AUTHOR = 'Pablo Figue'
-SITENAME = 'Pablo Figue Blog'
+AUTHOR = 'pfigue'
+SITENAME = 'moar pfigue notes...'
 SITEURL = 'https://pfigue.github.io'
 
 PATH = 'content'
